@@ -13,9 +13,15 @@ export function registerTerminalHandlers(): void {
         throw new Error('No window found');
       }
 
-      const id = ptyManager.create(options, (data) => {
-        window.webContents.send(IPC_CHANNELS.TERMINAL_DATA, { id, data });
-      });
+      const id = ptyManager.create(
+        options,
+        (data) => {
+          window.webContents.send(IPC_CHANNELS.TERMINAL_DATA, { id, data });
+        },
+        (exitCode, signal) => {
+          window.webContents.send(IPC_CHANNELS.TERMINAL_EXIT, { id, exitCode, signal });
+        }
+      );
 
       return id;
     }

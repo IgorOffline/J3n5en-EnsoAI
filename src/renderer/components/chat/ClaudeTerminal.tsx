@@ -59,6 +59,10 @@ const lightTheme: ITheme = {
 
 interface ClaudeTerminalProps {
   cwd?: string;
+  sessionId?: string;
+  initialized?: boolean;
+  onInitialized?: () => void;
+  onExit?: () => void;
 }
 
 // Helper to check if dark mode is active
@@ -72,7 +76,7 @@ function useIsDarkMode() {
   }, [theme]);
 }
 
-export function ClaudeTerminal({ cwd }: ClaudeTerminalProps) {
+export function ClaudeTerminal({ cwd, sessionId, initialized, onInitialized, onExit }: ClaudeTerminalProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const terminalRef = useRef<Terminal | null>(null);
   const isDarkMode = useIsDarkMode();
@@ -80,6 +84,11 @@ export function ClaudeTerminal({ cwd }: ClaudeTerminalProps) {
   const fitAddonRef = useRef<FitAddon | null>(null);
   const ptyIdRef = useRef<string | null>(null);
   const cleanupRef = useRef<(() => void) | null>(null);
+  const exitCleanupRef = useRef<(() => void) | null>(null);
+  const onExitRef = useRef(onExit);
+  onExitRef.current = onExit;
+  const onInitializedRef = useRef(onInitialized);
+  onInitializedRef.current = onInitialized;
 
   const initTerminal = useCallback(async () => {
     if (!containerRef.current || terminalRef.current) return;
@@ -109,14 +118,26 @@ export function ClaudeTerminal({ cwd }: ClaudeTerminalProps) {
 
     // Create pty session running claude command
     try {
+      // First run: use --session-id to create; Resume: use --resume to restore
+      const args = sessionId
+        ? initialized
+          ? ['--resume', sessionId]
+          : ['--session-id', sessionId]
+        : [];
       const ptyId = await window.electronAPI.terminal.create({
         cwd: cwd || window.electronAPI.env.HOME,
         shell: 'claude',
+        args,
         cols: terminal.cols,
         rows: terminal.rows,
       });
 
       ptyIdRef.current = ptyId;
+
+      // Mark as initialized after first successful creation
+      if (!initialized) {
+        onInitializedRef.current?.();
+      }
 
       // Handle data from pty
       const cleanup = window.electronAPI.terminal.onData((event) => {
@@ -125,6 +146,14 @@ export function ClaudeTerminal({ cwd }: ClaudeTerminalProps) {
         }
       });
       cleanupRef.current = cleanup;
+
+      // Handle exit from pty
+      const exitCleanup = window.electronAPI.terminal.onExit((event) => {
+        if (event.id === ptyId) {
+          onExitRef.current?.();
+        }
+      });
+      exitCleanupRef.current = exitCleanup;
 
       // Handle input from terminal
       terminal.onData((data) => {
@@ -147,6 +176,9 @@ export function ClaudeTerminal({ cwd }: ClaudeTerminalProps) {
       if (cleanupRef.current) {
         cleanupRef.current();
       }
+      if (exitCleanupRef.current) {
+        exitCleanupRef.current();
+      }
       if (ptyIdRef.current) {
         window.electronAPI.terminal.destroy(ptyIdRef.current);
       }
@@ -166,14 +198,19 @@ export function ClaudeTerminal({ cwd }: ClaudeTerminalProps) {
 
   // Handle resize
   useEffect(() => {
+    let resizeTimeout: ReturnType<typeof setTimeout>;
+
     const handleResize = () => {
-      if (fitAddonRef.current && terminalRef.current && ptyIdRef.current) {
-        fitAddonRef.current.fit();
-        window.electronAPI.terminal.resize(ptyIdRef.current, {
-          cols: terminalRef.current.cols,
-          rows: terminalRef.current.rows,
-        });
-      }
+      clearTimeout(resizeTimeout);
+      resizeTimeout = setTimeout(() => {
+        if (fitAddonRef.current && terminalRef.current && ptyIdRef.current) {
+          fitAddonRef.current.fit();
+          window.electronAPI.terminal.resize(ptyIdRef.current, {
+            cols: terminalRef.current.cols,
+            rows: terminalRef.current.rows,
+          });
+        }
+      }, 50);
     };
 
     window.addEventListener('resize', handleResize);
@@ -184,9 +221,21 @@ export function ClaudeTerminal({ cwd }: ClaudeTerminalProps) {
       observer.observe(containerRef.current);
     }
 
+    // Also trigger on visibility change (when switching tabs)
+    const intersectionObserver = new IntersectionObserver((entries) => {
+      if (entries[0]?.isIntersecting) {
+        handleResize();
+      }
+    });
+    if (containerRef.current) {
+      intersectionObserver.observe(containerRef.current);
+    }
+
     return () => {
+      clearTimeout(resizeTimeout);
       window.removeEventListener('resize', handleResize);
       observer.disconnect();
+      intersectionObserver.disconnect();
     };
   }, []);
 

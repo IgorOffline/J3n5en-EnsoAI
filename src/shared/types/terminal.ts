@@ -10,6 +10,7 @@ export interface TerminalSession {
 export interface TerminalCreateOptions {
   cwd?: string;
   shell?: string;
+  args?: string[];
   cols?: number;
   rows?: number;
   env?: Record<string, string>;

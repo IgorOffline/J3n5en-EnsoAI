@@ -5,18 +5,25 @@ import type { TerminalCreateOptions } from '@shared/types';
 interface PtySession {
   pty: pty.IPty;
   onData: (data: string) => void;
+  onExit?: (exitCode: number, signal?: number) => void;
 }
 
 export class PtyManager {
   private sessions = new Map<string, PtySession>();
   private counter = 0;
 
-  create(options: TerminalCreateOptions, onData: (data: string) => void): string {
+  create(
+    options: TerminalCreateOptions,
+    onData: (data: string) => void,
+    onExit?: (exitCode: number, signal?: number) => void
+  ): string {
     const id = `pty-${++this.counter}`;
     const shell = options.shell || detectShell();
     const cwd = options.cwd || process.env.HOME || '/';
 
-    const ptyProcess = pty.spawn(shell, [], {
+    const args = options.args || [];
+
+    const ptyProcess = pty.spawn(shell, args, {
       name: 'xterm-256color',
       cols: options.cols || 80,
       rows: options.rows || 24,
@@ -33,11 +40,12 @@ export class PtyManager {
       onData(data);
     });
 
-    ptyProcess.onExit(() => {
+    ptyProcess.onExit(({ exitCode, signal }) => {
       this.sessions.delete(id);
+      onExit?.(exitCode, signal);
     });
 
-    this.sessions.set(id, { pty: ptyProcess, onData });
+    this.sessions.set(id, { pty: ptyProcess, onData, onExit });
 
     return id;
   }

@@ -9,7 +9,7 @@ import {
   FolderOpen,
 } from 'lucide-react';
 import { OpenInMenu } from '@/components/app/OpenInMenu';
-import { ClaudeTerminal } from '@/components/chat/ClaudeTerminal';
+import { ChatPanel } from '@/components/chat/ChatPanel';
 
 const buttonVariants = {
   initial: { scale: 0, opacity: 0 },
@@ -150,16 +150,17 @@ export function MainContent({
       )}
 
       {/* Content */}
-      <div className="flex flex-1 flex-col overflow-hidden">
-        {activeTab === 'chat' && (
-          worktreePath ? (
-            <ClaudeTerminal key={worktreePath} cwd={worktreePath} />
+      <div className="relative flex-1 overflow-hidden">
+        {/* Chat tab - keep mounted to preserve terminal session */}
+        <div className={cn("absolute inset-0", activeTab !== 'chat' && "invisible")}>
+          {worktreePath ? (
+            <ChatPanel key={worktreePath} cwd={worktreePath} />
           ) : (
             <div className="flex h-full items-center justify-center text-muted-foreground">
               <p>请先选择一个 Worktree</p>
             </div>
-          )
-        )}
+          )}
+        </div>
         {activeTab === 'file' && <FilePlaceholder />}
         {activeTab === 'terminal' && <TerminalPlaceholder />}
         {activeTab === 'source-control' && <SourceControlPlaceholder />}

@@ -1,5 +1,4 @@
 import { registerGitHandlers } from './git';
-import { registerGitHandlers } from './git';
 import { registerWorktreeHandlers } from './worktree';
 import { registerFileHandlers } from './files';
 import { registerTerminalHandlers } from './terminal';

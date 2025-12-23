@@ -84,6 +84,11 @@ const electronAPI = {
       ipcRenderer.on(IPC_CHANNELS.TERMINAL_DATA, handler);
       return () => ipcRenderer.off(IPC_CHANNELS.TERMINAL_DATA, handler);
     },
+    onExit: (callback: (event: { id: string; exitCode: number; signal?: number }) => void): (() => void) => {
+      const handler = (_: unknown, event: { id: string; exitCode: number; signal?: number }) => callback(event);
+      ipcRenderer.on(IPC_CHANNELS.TERMINAL_EXIT, handler);
+      return () => ipcRenderer.off(IPC_CHANNELS.TERMINAL_EXIT, handler);
+    },
   },
 
   // Agent
