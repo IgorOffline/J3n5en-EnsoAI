@@ -87,9 +87,15 @@ function saveSessions(
 ): void {
   // Only persist sessions for agents that support resumption
   const persistableSessions = sessions.filter((s) => RESUMABLE_AGENTS.has(s.agentCommand));
+  const persistableIds = new Set(persistableSessions.map((s) => s.id));
+  // Only keep activeIds that reference persistable sessions
+  const persistableActiveIds: Record<string, string | null> = {};
+  for (const [cwd, id] of Object.entries(activeIds)) {
+    persistableActiveIds[cwd] = id && persistableIds.has(id) ? id : null;
+  }
   localStorage.setItem(
     SESSIONS_STORAGE_PREFIX + repoPath,
-    JSON.stringify({ sessions: persistableSessions, activeIds })
+    JSON.stringify({ sessions: persistableSessions, activeIds: persistableActiveIds })
   );
 }
 
