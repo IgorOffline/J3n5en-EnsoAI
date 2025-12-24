@@ -26,6 +26,45 @@ self.MonacoEnvironment = {
 // Tell @monaco-editor/react to use our pre-configured monaco instance
 loader.config({ monaco });
 
+// Configure TypeScript compiler options to suppress module resolution errors
+// Monaco's TS service can't resolve project-specific paths like @/* aliases
+monaco.typescript.typescriptDefaults.setCompilerOptions({
+  target: monaco.typescript.ScriptTarget.ESNext,
+  module: monaco.typescript.ModuleKind.ESNext,
+  moduleResolution: monaco.typescript.ModuleResolutionKind.NodeJs,
+  allowNonTsExtensions: true,
+  allowSyntheticDefaultImports: true,
+  esModuleInterop: true,
+  jsx: monaco.typescript.JsxEmit.ReactJSX,
+  strict: true,
+  skipLibCheck: true,
+  noEmit: true,
+  // Suppress module not found errors since we can't provide full project context
+  noResolve: true,
+});
+
+monaco.typescript.javascriptDefaults.setCompilerOptions({
+  target: monaco.typescript.ScriptTarget.ESNext,
+  module: monaco.typescript.ModuleKind.ESNext,
+  moduleResolution: monaco.typescript.ModuleResolutionKind.NodeJs,
+  allowNonTsExtensions: true,
+  allowSyntheticDefaultImports: true,
+  esModuleInterop: true,
+  jsx: monaco.typescript.JsxEmit.ReactJSX,
+  noResolve: true,
+});
+
+// Disable semantic validation to avoid module resolution errors
+monaco.typescript.typescriptDefaults.setDiagnosticsOptions({
+  noSemanticValidation: true,
+  noSyntaxValidation: false,
+});
+
+monaco.typescript.javascriptDefaults.setDiagnosticsOptions({
+  noSemanticValidation: true,
+  noSyntaxValidation: false,
+});
+
 type Monaco = typeof monaco;
 
 const CUSTOM_THEME_NAME = 'enso-theme';
@@ -179,10 +218,11 @@ export function EditorArea({
       />
 
       {/* Editor */}
-      <div className="flex-1 overflow-hidden">
+      <div className="relative min-w-0 flex-1">
         {activeTab ? (
           <Editor
             key={activeTab.path}
+            width="100%"
             height="100%"
             path={activeTab.path}
             value={activeTab.content}
@@ -196,6 +236,7 @@ export function EditorArea({
               padding: { top: 12, bottom: 12 },
               scrollBeyondLastLine: false,
               automaticLayout: true,
+              fixedOverflowWidgets: true,
               tabSize: 2,
               wordWrap: 'on',
               renderLineHighlight: 'line',
