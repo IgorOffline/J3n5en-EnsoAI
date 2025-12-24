@@ -1,8 +1,9 @@
 import { AnimatePresence, motion } from 'framer-motion';
-import { FileCode, FolderOpen, GitBranch, GitCommit, Plus, Sparkles, Terminal } from 'lucide-react';
+import { FileCode, FolderOpen, GitBranch, Plus, Sparkles, Terminal } from 'lucide-react';
 import { OpenInMenu } from '@/components/app/OpenInMenu';
 import { AgentPanel } from '@/components/chat/AgentPanel';
 import { FilePanel } from '@/components/files';
+import { SourceControlPanel } from '@/components/source-control';
 import { Button } from '@/components/ui/button';
 import {
   Empty,
@@ -133,7 +134,12 @@ export function MainContent({
       {/* Content */}
       <div className="relative flex-1 overflow-hidden">
         {/* Chat tab - keep mounted to preserve terminal session */}
-        <div className={cn('absolute inset-0', activeTab !== 'chat' && 'invisible')}>
+        <div
+          className={cn(
+            'absolute inset-0',
+            activeTab === 'chat' ? 'z-10' : 'invisible pointer-events-none z-0'
+          )}
+        >
           {repoPath && worktreePath ? (
             <AgentPanel repoPath={repoPath} cwd={worktreePath} isActive={activeTab === 'chat'} />
           ) : (
@@ -155,29 +161,37 @@ export function MainContent({
           )}
         </div>
         {/* Terminal tab - keep mounted to preserve shell sessions */}
-        <div className={cn('absolute inset-0', activeTab !== 'terminal' && 'invisible')}>
+        <div
+          className={cn(
+            'absolute inset-0',
+            activeTab === 'terminal' ? 'z-10' : 'invisible pointer-events-none z-0'
+          )}
+        >
           <TerminalPanel cwd={worktreePath} isActive={activeTab === 'terminal'} />
         </div>
         {/* File tab - keep mounted to preserve editor state */}
-        <div className={cn('absolute inset-0', activeTab !== 'file' && 'invisible')}>
+        <div
+          className={cn(
+            'absolute inset-0',
+            activeTab === 'file' ? 'z-10' : 'invisible pointer-events-none z-0'
+          )}
+        >
           <FilePanel rootPath={worktreePath} isActive={activeTab === 'file'} />
         </div>
-        {activeTab === 'source-control' && <SourceControlPlaceholder />}
+        {/* Source Control tab - keep mounted to preserve selection state */}
+        <div
+          className={cn(
+            'absolute inset-0',
+            activeTab === 'source-control' ? 'z-10' : 'invisible pointer-events-none z-0'
+          )}
+        >
+          <SourceControlPanel
+            rootPath={worktreePath}
+            onExpandWorktree={onExpandWorktree}
+            worktreeCollapsed={worktreeCollapsed}
+          />
+        </div>
       </div>
     </main>
-  );
-}
-
-function SourceControlPlaceholder() {
-  return (
-    <Empty>
-      <EmptyMedia variant="icon">
-        <GitCommit className="h-4.5 w-4.5" />
-      </EmptyMedia>
-      <EmptyHeader>
-        <EmptyTitle>源代码管理</EmptyTitle>
-        <EmptyDescription>此功能即将推出，敬请期待</EmptyDescription>
-      </EmptyHeader>
-    </Empty>
   );
 }

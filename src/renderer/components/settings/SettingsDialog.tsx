@@ -634,6 +634,8 @@ function KeybindingsSettings() {
     setMainTabKeybindings,
     agentKeybindings,
     setAgentKeybindings,
+    sourceControlKeybindings,
+    setSourceControlKeybindings,
   } = useSettingsStore();
 
   return (
@@ -801,6 +803,38 @@ function KeybindingsSettings() {
                 setTerminalKeybindings({
                   ...terminalKeybindings,
                   clear: binding,
+                });
+              }}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Source Control */}
+      <div className="border-t pt-6">
+        <h3 className="text-lg font-medium">源代码管理</h3>
+        <p className="text-sm text-muted-foreground mb-4">设置 Diff 导航快捷键</p>
+        <div className="space-y-3">
+          <div className="grid grid-cols-[120px_1fr] items-center gap-4">
+            <span className="text-sm">上一处差异</span>
+            <KeybindingInput
+              value={sourceControlKeybindings.prevDiff}
+              onChange={(binding) => {
+                setSourceControlKeybindings({
+                  ...sourceControlKeybindings,
+                  prevDiff: binding,
+                });
+              }}
+            />
+          </div>
+          <div className="grid grid-cols-[120px_1fr] items-center gap-4">
+            <span className="text-sm">下一处差异</span>
+            <KeybindingInput
+              value={sourceControlKeybindings.nextDiff}
+              onChange={(binding) => {
+                setSourceControlKeybindings({
+                  ...sourceControlKeybindings,
+                  nextDiff: binding,
                 });
               }}
             />

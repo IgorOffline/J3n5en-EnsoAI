@@ -1,14 +1,49 @@
+import { existsSync, statSync } from 'node:fs';
+import path from 'node:path';
 import { IPC_CHANNELS } from '@shared/types';
 import { ipcMain } from 'electron';
 import { GitService } from '../services/git/GitService';
 
 const gitServices = new Map<string, GitService>();
 
-function getGitService(workdir: string): GitService {
-  if (!gitServices.has(workdir)) {
-    gitServices.set(workdir, new GitService(workdir));
+// Authorized workdirs (registered when worktrees are loaded)
+const authorizedWorkdirs = new Set<string>();
+
+export function registerAuthorizedWorkdir(workdir: string): void {
+  authorizedWorkdirs.add(path.resolve(workdir));
+}
+
+export function unregisterAuthorizedWorkdir(workdir: string): void {
+  const resolved = path.resolve(workdir);
+  authorizedWorkdirs.delete(resolved);
+  gitServices.delete(resolved);
+}
+
+function validateWorkdir(workdir: string): string {
+  const resolved = path.resolve(workdir);
+
+  // Check if workdir is authorized
+  if (!authorizedWorkdirs.has(resolved)) {
+    // Fallback: check if it's a valid git directory
+    if (!existsSync(resolved) || !statSync(resolved).isDirectory()) {
+      throw new Error('Invalid workdir: path does not exist or is not a directory');
+    }
+    // Check for .git folder
+    const gitDir = path.join(resolved, '.git');
+    if (!existsSync(gitDir)) {
+      throw new Error('Invalid workdir: not a git repository');
+    }
   }
-  return gitServices.get(workdir)!;
+
+  return resolved;
+}
+
+function getGitService(workdir: string): GitService {
+  const resolved = validateWorkdir(workdir);
+  if (!gitServices.has(resolved)) {
+    gitServices.set(resolved, new GitService(resolved));
+  }
+  return gitServices.get(resolved)!;
 }
 
 export function registerGitHandlers(): void {
@@ -77,5 +112,33 @@ export function registerGitHandlers(): void {
     await git.init();
     // Clear the service cache after init to get fresh instance
     gitServices.delete(workdir);
+  });
+
+  ipcMain.handle(IPC_CHANNELS.GIT_FILE_CHANGES, async (_, workdir: string) => {
+    const git = getGitService(workdir);
+    return git.getFileChanges();
+  });
+
+  ipcMain.handle(
+    IPC_CHANNELS.GIT_FILE_DIFF,
+    async (_, workdir: string, filePath: string, staged: boolean) => {
+      const git = getGitService(workdir);
+      return git.getFileDiff(filePath, staged);
+    }
+  );
+
+  ipcMain.handle(IPC_CHANNELS.GIT_STAGE, async (_, workdir: string, paths: string[]) => {
+    const git = getGitService(workdir);
+    await git.stage(paths);
+  });
+
+  ipcMain.handle(IPC_CHANNELS.GIT_UNSTAGE, async (_, workdir: string, paths: string[]) => {
+    const git = getGitService(workdir);
+    await git.unstage(paths);
+  });
+
+  ipcMain.handle(IPC_CHANNELS.GIT_DISCARD, async (_, workdir: string, filePath: string) => {
+    const git = getGitService(workdir);
+    await git.discard(filePath);
   });
 }

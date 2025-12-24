@@ -1,0 +1,69 @@
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+
+export function useFileChanges(workdir: string | null) {
+  return useQuery({
+    queryKey: ['git', 'file-changes', workdir],
+    queryFn: async () => {
+      if (!workdir) return [];
+      return window.electronAPI.git.getFileChanges(workdir);
+    },
+    enabled: !!workdir,
+    refetchInterval: 5000, // Increased from 3s to 5s for better performance
+    refetchIntervalInBackground: false, // Only poll when window is focused
+    staleTime: 2000, // Avoid redundant requests within 2s
+  });
+}
+
+export function useFileDiff(workdir: string | null, path: string | null, staged: boolean) {
+  return useQuery({
+    queryKey: ['git', 'file-diff', workdir, path, staged],
+    queryFn: async () => {
+      if (!workdir || !path) return null;
+      return window.electronAPI.git.getFileDiff(workdir, path, staged);
+    },
+    enabled: !!workdir && !!path,
+  });
+}
+
+export function useGitStage() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ workdir, paths }: { workdir: string; paths: string[] }) => {
+      await window.electronAPI.git.stage(workdir, paths);
+    },
+    onSuccess: (_, { workdir }) => {
+      queryClient.invalidateQueries({ queryKey: ['git', 'file-changes', workdir] });
+      queryClient.invalidateQueries({ queryKey: ['git', 'status', workdir] });
+    },
+  });
+}
+
+export function useGitUnstage() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ workdir, paths }: { workdir: string; paths: string[] }) => {
+      await window.electronAPI.git.unstage(workdir, paths);
+    },
+    onSuccess: (_, { workdir }) => {
+      queryClient.invalidateQueries({ queryKey: ['git', 'file-changes', workdir] });
+      queryClient.invalidateQueries({ queryKey: ['git', 'status', workdir] });
+    },
+  });
+}
+
+export function useGitDiscard() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ workdir, path }: { workdir: string; path: string }) => {
+      await window.electronAPI.git.discard(workdir, path);
+    },
+    onSuccess: (_, { workdir }) => {
+      queryClient.invalidateQueries({ queryKey: ['git', 'file-changes', workdir] });
+      queryClient.invalidateQueries({ queryKey: ['git', 'status', workdir] });
+      queryClient.invalidateQueries({ queryKey: ['git', 'file-diff', workdir] });
+    },
+  });
+}
