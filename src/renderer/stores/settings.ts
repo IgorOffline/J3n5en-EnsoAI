@@ -5,7 +5,34 @@ import {
 } from '@/lib/ghosttyTheme';
 import type { BuiltinAgentId, CustomAgent } from '@shared/types';
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { createJSONStorage, persist } from 'zustand/middleware';
+
+// Custom storage using Electron IPC to persist settings to JSON file
+const electronStorage = {
+  getItem: async (name: string): Promise<string | null> => {
+    const data = await window.electronAPI.settings.read();
+    if (data && typeof data === 'object' && name in data) {
+      return JSON.stringify((data as Record<string, unknown>)[name]);
+    }
+    return null;
+  },
+  setItem: async (name: string, value: string): Promise<void> => {
+    const existingData = (await window.electronAPI.settings.read()) || {};
+    const newData = {
+      ...(typeof existingData === 'object' ? existingData : {}),
+      [name]: JSON.parse(value),
+    };
+    await window.electronAPI.settings.write(newData);
+  },
+  removeItem: async (name: string): Promise<void> => {
+    const existingData = (await window.electronAPI.settings.read()) || {};
+    if (typeof existingData === 'object' && existingData !== null) {
+      const newData = { ...existingData } as Record<string, unknown>;
+      delete newData[name];
+      await window.electronAPI.settings.write(newData);
+    }
+  },
+};
 
 // Apply terminal font settings to app CSS variables
 function applyTerminalFont(fontFamily: string, fontSize: number) {
@@ -193,6 +220,7 @@ export const useSettingsStore = create<SettingsState>()(
     }),
     {
       name: 'enso-settings',
+      storage: createJSONStorage(() => electronStorage),
       onRehydrateStorage: () => (state) => {
         if (state) {
           if (state.theme === 'sync-terminal') {

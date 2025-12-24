@@ -1,5 +1,6 @@
 import { OpenInMenu } from '@/components/app/OpenInMenu';
 import { AgentPanel } from '@/components/chat/AgentPanel';
+import { FilePanel } from '@/components/files';
 import { cn } from '@/lib/utils';
 import { AnimatePresence, motion } from 'framer-motion';
 import { FileCode, FolderOpen, GitBranch, Plus, Sparkles, Terminal } from 'lucide-react';
@@ -137,18 +138,13 @@ export function MainContent({
         <div className={cn('absolute inset-0', activeTab !== 'terminal' && 'invisible')}>
           <TerminalPanel cwd={worktreePath} isActive={activeTab === 'terminal'} />
         </div>
-        {activeTab === 'file' && <FilePlaceholder />}
+        {/* File tab - keep mounted to preserve editor state */}
+        <div className={cn('absolute inset-0', activeTab !== 'file' && 'invisible')}>
+          <FilePanel rootPath={worktreePath} />
+        </div>
         {activeTab === 'source-control' && <SourceControlPlaceholder />}
       </div>
     </main>
-  );
-}
-
-function FilePlaceholder() {
-  return (
-    <div className="flex h-full items-center justify-center text-muted-foreground">
-      <p>File Explorer - Phase 4</p>
-    </div>
   );
 }
 

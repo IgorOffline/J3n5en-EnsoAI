@@ -6,6 +6,8 @@ import type {
   CustomAgent,
   DatabaseQueryResult,
   DetectedApp,
+  FileChangeEvent,
+  FileEntry,
   GitBranch,
   GitLogEntry,
   GitStatus,
@@ -56,20 +58,27 @@ const electronAPI = {
       ipcRenderer.invoke(IPC_CHANNELS.FILE_READ, filePath),
     write: (filePath: string, content: string): Promise<void> =>
       ipcRenderer.invoke(IPC_CHANNELS.FILE_WRITE, filePath, content),
-    list: (
-      dirPath: string
-    ): Promise<
-      Array<{ name: string; path: string; isDirectory: boolean; size: number; modifiedAt: number }>
-    > => ipcRenderer.invoke(IPC_CHANNELS.FILE_LIST, dirPath),
+    createFile: (
+      filePath: string,
+      content = '',
+      options?: { overwrite?: boolean }
+    ): Promise<void> => ipcRenderer.invoke(IPC_CHANNELS.FILE_CREATE, filePath, content, options),
+    createDirectory: (dirPath: string): Promise<void> =>
+      ipcRenderer.invoke(IPC_CHANNELS.FILE_CREATE_DIR, dirPath),
+    rename: (fromPath: string, toPath: string): Promise<void> =>
+      ipcRenderer.invoke(IPC_CHANNELS.FILE_RENAME, fromPath, toPath),
+    move: (fromPath: string, toPath: string): Promise<void> =>
+      ipcRenderer.invoke(IPC_CHANNELS.FILE_MOVE, fromPath, toPath),
+    delete: (targetPath: string, options?: { recursive?: boolean }): Promise<void> =>
+      ipcRenderer.invoke(IPC_CHANNELS.FILE_DELETE, targetPath, options),
+    list: (dirPath: string): Promise<FileEntry[]> =>
+      ipcRenderer.invoke(IPC_CHANNELS.FILE_LIST, dirPath),
     watchStart: (dirPath: string): Promise<void> =>
       ipcRenderer.invoke(IPC_CHANNELS.FILE_WATCH_START, dirPath),
     watchStop: (dirPath: string): Promise<void> =>
       ipcRenderer.invoke(IPC_CHANNELS.FILE_WATCH_STOP, dirPath),
-    onChange: (
-      callback: (event: { type: 'create' | 'update' | 'delete'; path: string }) => void
-    ): (() => void) => {
-      const handler = (_: unknown, event: { type: 'create' | 'update' | 'delete'; path: string }) =>
-        callback(event);
+    onChange: (callback: (event: FileChangeEvent) => void): (() => void) => {
+      const handler = (_: unknown, event: FileChangeEvent) => callback(event);
       ipcRenderer.on(IPC_CHANNELS.FILE_CHANGE, handler);
       return () => ipcRenderer.off(IPC_CHANNELS.FILE_CHANGE, handler);
     },
@@ -169,6 +178,13 @@ const electronAPI = {
       ipcRenderer.invoke(IPC_CHANNELS.CLI_DETECT, customAgents),
     detectOne: (agentId: string, customAgent?: CustomAgent): Promise<AgentCliInfo> =>
       ipcRenderer.invoke(IPC_CHANNELS.CLI_DETECT_ONE, agentId, customAgent),
+  },
+
+  // Settings
+  settings: {
+    read: (): Promise<unknown> => ipcRenderer.invoke(IPC_CHANNELS.SETTINGS_READ),
+    write: (data: unknown): Promise<boolean> =>
+      ipcRenderer.invoke(IPC_CHANNELS.SETTINGS_WRITE, data),
   },
 
   // Environment

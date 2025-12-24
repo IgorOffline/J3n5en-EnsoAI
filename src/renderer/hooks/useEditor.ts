@@ -3,13 +3,15 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 export function useEditor() {
   const {
-    openFiles,
-    activeFilePath,
+    tabs,
+    activeTabPath,
     openFile,
     closeFile,
     setActiveFile,
     updateFileContent,
     markFileSaved,
+    setTabViewState,
+    reorderTabs,
   } = useEditorStore();
 
   const queryClient = useQueryClient();
@@ -17,15 +19,14 @@ export function useEditor() {
   const loadFile = useMutation({
     mutationFn: async (path: string) => {
       const content = await window.electronAPI.file.read(path);
-      const language = getLanguageFromPath(path);
-      openFile({ path, content, isDirty: false, language });
+      openFile({ path, content, isDirty: false });
       return content;
     },
   });
 
   const saveFile = useMutation({
     mutationFn: async (path: string) => {
-      const file = openFiles.find((f) => f.path === path);
+      const file = tabs.find((f) => f.path === path);
       if (!file) throw new Error('File not found');
       await window.electronAPI.file.write(path, file.content);
       markFileSaved(path);
@@ -35,38 +36,17 @@ export function useEditor() {
     },
   });
 
-  const activeFile = openFiles.find((f) => f.path === activeFilePath) || null;
+  const activeTab = tabs.find((f) => f.path === activeTabPath) || null;
 
   return {
-    openFiles,
-    activeFile,
+    tabs,
+    activeTab,
     loadFile,
     saveFile,
     closeFile,
     setActiveFile,
     updateFileContent,
+    setTabViewState,
+    reorderTabs,
   };
-}
-
-function getLanguageFromPath(path: string): string {
-  const ext = path.split('.').pop()?.toLowerCase();
-  const languageMap: Record<string, string> = {
-    ts: 'typescript',
-    tsx: 'typescriptreact',
-    js: 'javascript',
-    jsx: 'javascriptreact',
-    json: 'json',
-    md: 'markdown',
-    css: 'css',
-    scss: 'scss',
-    html: 'html',
-    yml: 'yaml',
-    yaml: 'yaml',
-    py: 'python',
-    rs: 'rust',
-    go: 'go',
-    swift: 'swift',
-    sql: 'sql',
-  };
-  return languageMap[ext || ''] || 'plaintext';
 }

@@ -6,3 +6,4 @@ export * from './database';
 export * from './worktree';
 export * from './app';
 export * from './cli';
+export * from './file';

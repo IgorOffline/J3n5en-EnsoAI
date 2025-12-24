@@ -1,18 +1,10 @@
-import { readFile, readdir, stat, writeFile } from 'node:fs/promises';
-import { join } from 'node:path';
-import { IPC_CHANNELS } from '@shared/types';
+import { mkdir, readFile, readdir, rename, rm, stat, writeFile } from 'node:fs/promises';
+import { dirname, join } from 'node:path';
+import { IPC_CHANNELS, type FileEntry } from '@shared/types';
 import { BrowserWindow, ipcMain } from 'electron';
 import { FileWatcher } from '../services/files/FileWatcher';
 
 const watchers = new Map<string, FileWatcher>();
-
-interface FileEntry {
-  name: string;
-  path: string;
-  isDirectory: boolean;
-  size: number;
-  modifiedAt: number;
-}
 
 export function registerFileHandlers(): void {
   ipcMain.handle(IPC_CHANNELS.FILE_READ, async (_, filePath: string) => {
@@ -23,6 +15,34 @@ export function registerFileHandlers(): void {
   ipcMain.handle(IPC_CHANNELS.FILE_WRITE, async (_, filePath: string, content: string) => {
     await writeFile(filePath, content, 'utf-8');
   });
+
+  ipcMain.handle(
+    IPC_CHANNELS.FILE_CREATE,
+    async (_, filePath: string, content = '', options?: { overwrite?: boolean }) => {
+      await mkdir(dirname(filePath), { recursive: true });
+      const flag = options?.overwrite ? 'w' : 'wx';
+      await writeFile(filePath, content, { encoding: 'utf-8', flag });
+    }
+  );
+
+  ipcMain.handle(IPC_CHANNELS.FILE_CREATE_DIR, async (_, dirPath: string) => {
+    await mkdir(dirPath, { recursive: true });
+  });
+
+  ipcMain.handle(IPC_CHANNELS.FILE_RENAME, async (_, fromPath: string, toPath: string) => {
+    await rename(fromPath, toPath);
+  });
+
+  ipcMain.handle(IPC_CHANNELS.FILE_MOVE, async (_, fromPath: string, toPath: string) => {
+    await rename(fromPath, toPath);
+  });
+
+  ipcMain.handle(
+    IPC_CHANNELS.FILE_DELETE,
+    async (_, targetPath: string, options?: { recursive?: boolean }) => {
+      await rm(targetPath, { recursive: options?.recursive ?? true, force: false });
+    }
+  );
 
   ipcMain.handle(IPC_CHANNELS.FILE_LIST, async (_, dirPath: string): Promise<FileEntry[]> => {
     const entries = await readdir(dirPath);

@@ -1,58 +1,93 @@
 import { create } from 'zustand';
 
-interface EditorFile {
+export interface EditorTab {
   path: string;
+  title: string;
   content: string;
   isDirty: boolean;
-  language?: string;
+  viewState?: unknown; // Monaco editor view state
 }
 
 interface EditorState {
-  openFiles: EditorFile[];
-  activeFilePath: string | null;
+  tabs: EditorTab[];
+  activeTabPath: string | null;
 
-  openFile: (file: EditorFile) => void;
+  openFile: (file: Omit<EditorTab, 'title' | 'viewState'> & { title?: string }) => void;
   closeFile: (path: string) => void;
   setActiveFile: (path: string | null) => void;
   updateFileContent: (path: string, content: string) => void;
   markFileSaved: (path: string) => void;
+  setTabViewState: (path: string, viewState: unknown) => void;
+  reorderTabs: (fromIndex: number, toIndex: number) => void;
 }
 
+const getTabTitle = (path: string) => path.split(/[/\\]/).pop() || path;
+
 export const useEditorStore = create<EditorState>((set) => ({
-  openFiles: [],
-  activeFilePath: null,
+  tabs: [],
+  activeTabPath: null,
 
   openFile: (file) =>
     set((state) => {
-      const exists = state.openFiles.some((f) => f.path === file.path);
+      const exists = state.tabs.some((tab) => tab.path === file.path);
       if (exists) {
-        return { activeFilePath: file.path };
+        return {
+          tabs: state.tabs.map((tab) =>
+            tab.path === file.path ? { ...tab, ...file, title: file.title ?? tab.title } : tab
+          ),
+          activeTabPath: file.path,
+        };
       }
       return {
-        openFiles: [...state.openFiles, file],
-        activeFilePath: file.path,
+        tabs: [
+          ...state.tabs,
+          {
+            ...file,
+            title: file.title ?? getTabTitle(file.path),
+          },
+        ],
+        activeTabPath: file.path,
       };
     }),
+
   closeFile: (path) =>
     set((state) => {
-      const newFiles = state.openFiles.filter((f) => f.path !== path);
+      const newTabs = state.tabs.filter((tab) => tab.path !== path);
       const newActive =
-        state.activeFilePath === path
-          ? newFiles.length > 0
-            ? newFiles[newFiles.length - 1].path
+        state.activeTabPath === path
+          ? newTabs.length > 0
+            ? newTabs[newTabs.length - 1].path
             : null
-          : state.activeFilePath;
-      return { openFiles: newFiles, activeFilePath: newActive };
+          : state.activeTabPath;
+      return { tabs: newTabs, activeTabPath: newActive };
     }),
-  setActiveFile: (path) => set({ activeFilePath: path }),
+
+  setActiveFile: (path) => set({ activeTabPath: path }),
+
   updateFileContent: (path, content) =>
     set((state) => ({
-      openFiles: state.openFiles.map((f) =>
-        f.path === path ? { ...f, content, isDirty: true } : f
+      tabs: state.tabs.map((tab) =>
+        tab.path === path ? { ...tab, content, isDirty: true } : tab
       ),
     })),
+
   markFileSaved: (path) =>
     set((state) => ({
-      openFiles: state.openFiles.map((f) => (f.path === path ? { ...f, isDirty: false } : f)),
+      tabs: state.tabs.map((tab) => (tab.path === path ? { ...tab, isDirty: false } : tab)),
     })),
+
+  setTabViewState: (path, viewState) =>
+    set((state) => ({
+      tabs: state.tabs.map((tab) => (tab.path === path ? { ...tab, viewState } : tab)),
+    })),
+
+  reorderTabs: (fromIndex, toIndex) =>
+    set((state) => {
+      if (fromIndex === toIndex) return { tabs: state.tabs };
+      const tabs = [...state.tabs];
+      const [moved] = tabs.splice(fromIndex, 1);
+      if (!moved) return { tabs: state.tabs };
+      tabs.splice(toIndex, 0, moved);
+      return { tabs };
+    }),
 }));

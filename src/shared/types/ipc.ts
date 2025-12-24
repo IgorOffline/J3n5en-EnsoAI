@@ -18,6 +18,11 @@ export const IPC_CHANNELS = {
   // Files
   FILE_READ: 'file:read',
   FILE_WRITE: 'file:write',
+  FILE_CREATE: 'file:create',
+  FILE_CREATE_DIR: 'file:createDir',
+  FILE_RENAME: 'file:rename',
+  FILE_MOVE: 'file:move',
+  FILE_DELETE: 'file:delete',
   FILE_LIST: 'file:list',
   FILE_WATCH_START: 'file:watch:start',
   FILE_WATCH_STOP: 'file:watch:stop',
@@ -61,6 +66,10 @@ export const IPC_CHANNELS = {
   // CLI Detector
   CLI_DETECT: 'cli:detect',
   CLI_DETECT_ONE: 'cli:detectOne',
+
+  // Settings
+  SETTINGS_READ: 'settings:read',
+  SETTINGS_WRITE: 'settings:write',
 } as const;
 
 export type IpcChannel = (typeof IPC_CHANNELS)[keyof typeof IPC_CHANNELS];
