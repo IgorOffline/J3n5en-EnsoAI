@@ -79,7 +79,7 @@ export type FontWeight =
   | '800'
   | '900';
 
-export type TerminalRenderer = 'canvas' | 'webgl';
+export type TerminalRenderer = 'dom' | 'canvas' | 'webgl';
 
 export interface AgentConfig {
   enabled: boolean;
@@ -171,6 +171,7 @@ interface SettingsState {
   terminalFontWeightBold: FontWeight;
   terminalTheme: string;
   terminalRenderer: TerminalRenderer;
+  terminalScrollback: number;
   terminalKeybindings: TerminalKeybindings;
   mainTabKeybindings: MainTabKeybindings;
   agentKeybindings: AgentKeybindings;
@@ -187,6 +188,7 @@ interface SettingsState {
   setTerminalFontWeightBold: (weight: FontWeight) => void;
   setTerminalTheme: (theme: string) => void;
   setTerminalRenderer: (renderer: TerminalRenderer) => void;
+  setTerminalScrollback: (scrollback: number) => void;
   setTerminalKeybindings: (keybindings: TerminalKeybindings) => void;
   setMainTabKeybindings: (keybindings: MainTabKeybindings) => void;
   setAgentKeybindings: (keybindings: AgentKeybindings) => void;
@@ -218,7 +220,8 @@ export const useSettingsStore = create<SettingsState>()(
       terminalFontWeight: 'normal',
       terminalFontWeightBold: '500',
       terminalTheme: 'Dracula',
-      terminalRenderer: 'canvas',
+      terminalRenderer: 'webgl',
+      terminalScrollback: 10000,
       terminalKeybindings: defaultTerminalKeybindings,
       mainTabKeybindings: defaultMainTabKeybindings,
       agentKeybindings: defaultAgentKeybindings,
@@ -256,6 +259,7 @@ export const useSettingsStore = create<SettingsState>()(
         set({ terminalTheme });
       },
       setTerminalRenderer: (terminalRenderer) => set({ terminalRenderer }),
+      setTerminalScrollback: (terminalScrollback) => set({ terminalScrollback }),
       setTerminalKeybindings: (terminalKeybindings) => set({ terminalKeybindings }),
       setMainTabKeybindings: (mainTabKeybindings) => set({ mainTabKeybindings }),
       setAgentKeybindings: (agentKeybindings) => set({ agentKeybindings }),

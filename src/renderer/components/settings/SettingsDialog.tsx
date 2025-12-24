@@ -50,9 +50,10 @@ import {
   useSettingsStore,
 } from '@/stores/settings';
 
-type SettingsCategory = 'appearance' | 'keybindings' | 'agent';
+type SettingsCategory = 'general' | 'appearance' | 'keybindings' | 'agent';
 
 const categories: Array<{ id: SettingsCategory; icon: React.ElementType; label: string }> = [
+  { id: 'general', icon: Settings, label: '通用' },
   { id: 'appearance', icon: Palette, label: '外观' },
   { id: 'keybindings', icon: Keyboard, label: '快捷键' },
   { id: 'agent', icon: Bot, label: 'Agent' },
@@ -65,7 +66,7 @@ interface SettingsDialogProps {
 }
 
 export function SettingsDialog({ trigger, open, onOpenChange }: SettingsDialogProps) {
-  const [activeCategory, setActiveCategory] = React.useState<SettingsCategory>('appearance');
+  const [activeCategory, setActiveCategory] = React.useState<SettingsCategory>('general');
 
   // Controlled mode (open prop provided) doesn't need trigger
   const isControlled = open !== undefined;
@@ -110,6 +111,7 @@ export function SettingsDialog({ trigger, open, onOpenChange }: SettingsDialogPr
 
           {/* Right: Settings Panel */}
           <div className="flex-1 overflow-y-auto p-6">
+            {activeCategory === 'general' && <GeneralSettings />}
             {activeCategory === 'appearance' && <AppearanceSettings />}
             {activeCategory === 'keybindings' && <KeybindingsSettings />}
             {activeCategory === 'agent' && <AgentSettings />}
@@ -117,6 +119,91 @@ export function SettingsDialog({ trigger, open, onOpenChange }: SettingsDialogPr
         </div>
       </DialogPopup>
     </Dialog>
+  );
+}
+
+const rendererOptions: { value: TerminalRenderer; label: string; description: string }[] = [
+  { value: 'webgl', label: 'WebGL', description: '性能最佳，推荐' },
+  { value: 'canvas', label: 'Canvas', description: '兼容性好' },
+  { value: 'dom', label: 'DOM', description: '最基础，性能较差' },
+];
+
+const scrollbackOptions = [
+  { value: 1000, label: '1,000 行' },
+  { value: 5000, label: '5,000 行' },
+  { value: 10000, label: '10,000 行' },
+  { value: 20000, label: '20,000 行' },
+  { value: 50000, label: '50,000 行' },
+];
+
+function GeneralSettings() {
+  const { terminalRenderer, setTerminalRenderer, terminalScrollback, setTerminalScrollback } =
+    useSettingsStore();
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h3 className="text-lg font-medium">终端</h3>
+        <p className="text-sm text-muted-foreground">终端渲染与性能设置</p>
+      </div>
+
+      {/* Renderer */}
+      <div className="grid grid-cols-[100px_1fr] items-start gap-4">
+        <span className="text-sm font-medium mt-2">渲染器</span>
+        <div className="space-y-1.5">
+          <Select
+            value={terminalRenderer}
+            onValueChange={(v) => setTerminalRenderer(v as TerminalRenderer)}
+          >
+            <SelectTrigger className="w-48">
+              <SelectValue>
+                {rendererOptions.find((o) => o.value === terminalRenderer)?.label}
+              </SelectValue>
+            </SelectTrigger>
+            <SelectPopup>
+              {rendererOptions.map((opt) => (
+                <SelectItem key={opt.value} value={opt.value}>
+                  {opt.label}
+                </SelectItem>
+              ))}
+            </SelectPopup>
+          </Select>
+          <p className="text-xs text-muted-foreground">
+            {rendererOptions.find((o) => o.value === terminalRenderer)?.description}
+          </p>
+          <p className="text-xs text-muted-foreground">更改后需新建终端或重启应用才能生效</p>
+        </div>
+      </div>
+
+      {/* Scrollback */}
+      <div className="grid grid-cols-[100px_1fr] items-start gap-4">
+        <span className="text-sm font-medium mt-2">回滚行数</span>
+        <div className="space-y-1.5">
+          <Select
+            value={String(terminalScrollback)}
+            onValueChange={(v) => setTerminalScrollback(Number(v))}
+          >
+            <SelectTrigger className="w-48">
+              <SelectValue>
+                {scrollbackOptions.find((o) => o.value === terminalScrollback)?.label ??
+                  `${terminalScrollback.toLocaleString()} 行`}
+              </SelectValue>
+            </SelectTrigger>
+            <SelectPopup>
+              {scrollbackOptions.map((opt) => (
+                <SelectItem key={opt.value} value={String(opt.value)}>
+                  {opt.label}
+                </SelectItem>
+              ))}
+            </SelectPopup>
+          </Select>
+          <p className="text-xs text-muted-foreground">
+            终端可向上滚动查看的历史行数，值越大内存占用越高
+          </p>
+          <p className="text-xs text-muted-foreground">更改后需新建终端才能生效</p>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -146,8 +233,6 @@ function AppearanceSettings() {
     setTerminalFontWeight,
     terminalFontWeightBold,
     setTerminalFontWeightBold,
-    terminalRenderer,
-    setTerminalRenderer,
   } = useSettingsStore();
 
   // Local state for inputs
@@ -366,42 +451,9 @@ function AppearanceSettings() {
           </SelectPopup>
         </Select>
       </div>
-
-      {/* Renderer */}
-      <div className="grid grid-cols-[100px_1fr] items-start gap-4">
-        <span className="text-sm font-medium mt-2">渲染器</span>
-        <div className="space-y-1.5">
-          <Select
-            value={terminalRenderer}
-            onValueChange={(v) => setTerminalRenderer(v as TerminalRenderer)}
-          >
-            <SelectTrigger className="w-48">
-              <SelectValue>
-                {rendererOptions.find((o) => o.value === terminalRenderer)?.label}
-              </SelectValue>
-            </SelectTrigger>
-            <SelectPopup>
-              {rendererOptions.map((opt) => (
-                <SelectItem key={opt.value} value={opt.value}>
-                  {opt.label}
-                </SelectItem>
-              ))}
-            </SelectPopup>
-          </Select>
-          <p className="text-xs text-muted-foreground">
-            {terminalRenderer === 'canvas' ? '兼容性好，推荐' : '性能更高，可能有花屏问题'}
-          </p>
-          <p className="text-xs text-muted-foreground">更改后需新建终端或重启应用才能生效</p>
-        </div>
-      </div>
     </div>
   );
 }
-
-const rendererOptions: { value: TerminalRenderer; label: string }[] = [
-  { value: 'canvas', label: 'Canvas' },
-  { value: 'webgl', label: 'WebGL' },
-];
 
 const fontWeightOptions: { value: FontWeight; label: string }[] = [
   { value: 'normal', label: 'Normal' },

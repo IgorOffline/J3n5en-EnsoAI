@@ -1,5 +1,5 @@
+import { CanvasAddon } from '@xterm/addon-canvas';
 import { FitAddon } from '@xterm/addon-fit';
-import { LigaturesAddon } from '@xterm/addon-ligatures';
 import { SearchAddon } from '@xterm/addon-search';
 import { Unicode11Addon } from '@xterm/addon-unicode11';
 import { WebLinksAddon } from '@xterm/addon-web-links';
@@ -86,6 +86,7 @@ function useTerminalSettings() {
     terminalFontFamily,
     terminalFontWeight,
     terminalFontWeightBold,
+    terminalScrollback,
   } = useSettingsStore();
 
   const theme = useMemo(() => {
@@ -98,6 +99,7 @@ function useTerminalSettings() {
     fontFamily: terminalFontFamily,
     fontWeight: terminalFontWeight,
     fontWeightBold: terminalFontWeightBold,
+    scrollback: terminalScrollback,
   };
 }
 
@@ -205,6 +207,7 @@ export function useXterm({
       fontWeight: settings.fontWeight,
       fontWeightBold: settings.fontWeightBold,
       theme: settings.theme,
+      scrollback: settings.scrollback,
       allowProposedApi: true,
       allowTransparency: false,
     });
@@ -225,20 +228,28 @@ export function useXterm({
     terminal.open(containerRef.current);
     fitAddon.fit();
 
-    // Load WebGL renderer if enabled (better performance but may have artifacts)
-    // Default to canvas renderer for stability
+    // Load renderer based on settings (webgl > canvas > dom)
     if (terminalRenderer === 'webgl') {
       try {
         const webglAddon = new WebglAddon();
-        webglAddon.onContextLoss(() => {
-          webglAddon.dispose();
-        });
+        webglAddon.onContextLoss(() => webglAddon.dispose());
         terminal.loadAddon(webglAddon);
       } catch (error) {
-        console.warn('WebGL addon failed to load, using canvas renderer:', error);
+        console.warn('[xterm] WebGL failed, falling back to canvas:', error);
+        try {
+          terminal.loadAddon(new CanvasAddon());
+        } catch {
+          // DOM renderer is the default fallback
+        }
+      }
+    } else if (terminalRenderer === 'canvas') {
+      try {
+        terminal.loadAddon(new CanvasAddon());
+      } catch (error) {
+        console.warn('[xterm] Canvas failed, using DOM renderer:', error);
       }
     }
-    terminal.loadAddon(new LigaturesAddon());
+    // 'dom' uses the default renderer, no addon needed
 
     // Register file path link provider for click-to-open-in-editor
     terminal.registerLinkProvider({
