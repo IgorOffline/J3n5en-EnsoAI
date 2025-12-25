@@ -132,7 +132,7 @@ export function MainContent({
         {/* Chat tab - keep mounted to preserve terminal session */}
         <div
           className={cn(
-            'absolute inset-0',
+            'absolute inset-0 bg-background',
             activeTab === 'chat' ? 'z-10' : 'invisible pointer-events-none z-0'
           )}
         >
@@ -166,7 +166,7 @@ export function MainContent({
         {/* Terminal tab - keep mounted to preserve shell sessions */}
         <div
           className={cn(
-            'absolute inset-0',
+            'absolute inset-0 bg-background',
             activeTab === 'terminal' ? 'z-10' : 'invisible pointer-events-none z-0'
           )}
         >
@@ -175,7 +175,7 @@ export function MainContent({
         {/* File tab - keep mounted to preserve editor state */}
         <div
           className={cn(
-            'absolute inset-0',
+            'absolute inset-0 bg-background',
             activeTab === 'file' ? 'z-10' : 'invisible pointer-events-none z-0'
           )}
         >
@@ -184,7 +184,7 @@ export function MainContent({
         {/* Source Control tab - keep mounted to preserve selection state */}
         <div
           className={cn(
-            'absolute inset-0',
+            'absolute inset-0 bg-background',
             activeTab === 'source-control' ? 'z-10' : 'invisible pointer-events-none z-0'
           )}
         >
