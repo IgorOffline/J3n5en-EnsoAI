@@ -1,7 +1,9 @@
-import type { GitWorktree } from '@shared/types';
+import type { GitWorktree, WorkspaceRecord } from '@shared/types';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
+  Clock,
   ExternalLink,
+  Folder,
   FolderOpen,
   GitBranch,
   Loader2,
@@ -11,7 +13,7 @@ import {
   Terminal,
 } from 'lucide-react';
 import * as React from 'react';
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   CommandDialog,
   CommandDialogPopup,
@@ -96,17 +98,53 @@ function useCliUninstall() {
   });
 }
 
+const RECENT_COMMANDS_KEY = 'enso-recent-commands';
+const MAX_RECENT_COMMANDS = 5;
+
+function useRecentCommands() {
+  const [recentIds, setRecentIds] = useState<string[]>(() => {
+    try {
+      const stored = localStorage.getItem(RECENT_COMMANDS_KEY);
+      return stored ? JSON.parse(stored) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const addRecentCommand = useCallback((id: string) => {
+    setRecentIds((prev) => {
+      const filtered = prev.filter((i) => i !== id);
+      const updated = [id, ...filtered].slice(0, MAX_RECENT_COMMANDS);
+      localStorage.setItem(RECENT_COMMANDS_KEY, JSON.stringify(updated));
+      return updated;
+    });
+  }, []);
+
+  return { recentIds, addRecentCommand };
+}
+
+interface Repository {
+  name: string;
+  path: string;
+}
+
 interface ActionPanelProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   workspaceCollapsed: boolean;
   worktreeCollapsed: boolean;
   projectPath?: string;
+  workspaces?: WorkspaceRecord[];
+  currentWorkspaceId?: number;
+  repositories?: Repository[];
+  selectedRepoPath?: string;
   worktrees?: GitWorktree[];
   activeWorktreePath?: string;
   onToggleWorkspace: () => void;
   onToggleWorktree: () => void;
   onOpenSettings: () => void;
+  onSwitchWorkspace?: (workspace: WorkspaceRecord) => void;
+  onSwitchRepo?: (repoPath: string) => void;
   onSwitchWorktree?: (worktree: GitWorktree) => void;
 }
 
@@ -131,11 +169,17 @@ export function ActionPanel({
   workspaceCollapsed,
   worktreeCollapsed,
   projectPath,
+  workspaces = [],
+  currentWorkspaceId,
+  repositories = [],
+  selectedRepoPath,
   worktrees = [],
   activeWorktreePath,
   onToggleWorkspace,
   onToggleWorktree,
   onOpenSettings,
+  onSwitchWorkspace,
+  onSwitchRepo,
   onSwitchWorktree,
 }: ActionPanelProps) {
   const [search, setSearch] = React.useState('');
@@ -149,6 +193,9 @@ export function ActionPanel({
   const { data: cliStatus } = useCliInstallStatus();
   const cliInstall = useCliInstall();
   const cliUninstall = useCliUninstall();
+
+  // Recent commands
+  const { recentIds, addRecentCommand } = useRecentCommands();
 
   const actionGroups: ActionGroup[] = React.useMemo(() => {
     const groups: ActionGroup[] = [
@@ -208,6 +255,42 @@ export function ActionPanel({
       },
     ];
 
+    // Add "Switch Workspace" group
+    if (workspaces.length > 1 && onSwitchWorkspace) {
+      const switchableWorkspaces = workspaces.filter((ws) => ws.id !== currentWorkspaceId);
+      if (switchableWorkspaces.length > 0) {
+        groups.push({
+          label: '切换 Workspace',
+          items: switchableWorkspaces.map((ws) => ({
+            id: `switch-workspace-${ws.id}`,
+            label: `切换到 ${ws.name}`,
+            icon: Folder,
+            action: () => {
+              onSwitchWorkspace(ws);
+            },
+          })),
+        });
+      }
+    }
+
+    // Add "Switch Repository" group
+    if (repositories.length > 1 && onSwitchRepo) {
+      const switchableRepos = repositories.filter((repo) => repo.path !== selectedRepoPath);
+      if (switchableRepos.length > 0) {
+        groups.push({
+          label: '切换仓库',
+          items: switchableRepos.map((repo) => ({
+            id: `switch-repo-${repo.path}`,
+            label: `切换到 ${repo.name}`,
+            icon: FolderOpen,
+            action: () => {
+              onSwitchRepo(repo.path);
+            },
+          })),
+        });
+      }
+    }
+
     // Add "Switch Worktree" group
     if (worktrees.length > 1 && onSwitchWorktree) {
       const switchableWorktrees = worktrees.filter((wt) => wt.path !== activeWorktreePath);
@@ -241,18 +324,45 @@ export function ActionPanel({
       });
     }
 
+    // Build recent commands group
+    if (recentIds.length > 0) {
+      const allItems = groups.flatMap((g) => g.items);
+      const recentItems = recentIds
+        .map((id) => allItems.find((item) => item.id === id))
+        .filter((item): item is ActionItem => item !== undefined)
+        .map((item) => ({
+          ...item,
+          id: `recent-${item.id}`,
+          icon: Clock,
+        }));
+
+      if (recentItems.length > 0) {
+        groups.unshift({
+          label: '最近',
+          items: recentItems,
+        });
+      }
+    }
+
     return groups;
   }, [
     workspaceCollapsed,
     worktreeCollapsed,
     projectPath,
+    workspaces,
+    currentWorkspaceId,
+    repositories,
+    selectedRepoPath,
     worktrees,
     activeWorktreePath,
     detectedApps,
     cliStatus,
+    recentIds,
     onToggleWorkspace,
     onToggleWorktree,
     onOpenSettings,
+    onSwitchWorkspace,
+    onSwitchRepo,
     onSwitchWorktree,
     openWith,
     cliInstall,
@@ -301,10 +411,14 @@ export function ActionPanel({
 
   const executeAction = React.useCallback(
     (action: ActionItem) => {
+      // Record to recent commands (strip 'recent-' prefix if present)
+      const originalId = action.id.startsWith('recent-') ? action.id.slice(7) : action.id;
+      addRecentCommand(originalId);
+
       action.action();
       onOpenChange(false);
     },
-    [onOpenChange]
+    [onOpenChange, addRecentCommand]
   );
 
   const handleKeyDown = React.useCallback(

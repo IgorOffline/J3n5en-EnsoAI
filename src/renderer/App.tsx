@@ -409,7 +409,7 @@ export default function App() {
     }
   }, [worktrees, activeWorktree]);
 
-  const _handleSelectWorkspace = (workspace: WorkspaceRecord) => {
+  const handleSelectWorkspace = (workspace: WorkspaceRecord) => {
     setCurrentWorkspace(workspace);
     setSelectedRepo(null);
     setActiveWorktree(null);
@@ -638,11 +638,17 @@ export default function App() {
         workspaceCollapsed={workspaceCollapsed}
         worktreeCollapsed={worktreeCollapsed}
         projectPath={activeWorktree?.path || selectedRepo || undefined}
+        workspaces={workspaces}
+        currentWorkspaceId={currentWorkspace?.id}
+        repositories={repositories}
+        selectedRepoPath={selectedRepo ?? undefined}
         worktrees={worktrees}
         activeWorktreePath={activeWorktree?.path}
         onToggleWorkspace={() => setWorkspaceCollapsed((prev) => !prev)}
         onToggleWorktree={() => setWorktreeCollapsed((prev) => !prev)}
         onOpenSettings={() => setSettingsOpen(true)}
+        onSwitchWorkspace={handleSelectWorkspace}
+        onSwitchRepo={handleSelectRepo}
         onSwitchWorktree={handleSelectWorktree}
       />
 
