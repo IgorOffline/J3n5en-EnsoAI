@@ -127,7 +127,7 @@ export function buildAppMenu(mainWindow: BrowserWindow, options: MenuOptions = {
       submenu: [
         {
           label: '了解更多',
-          click: () => shell.openExternal('https://github.com/anthropics/claude-code'),
+          click: () => shell.openExternal('https://github.com/J3n5en/EnsoAI'),
         },
       ],
     },
