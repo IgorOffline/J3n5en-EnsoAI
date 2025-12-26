@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { matchesKeybinding } from '@/lib/keybinding';
 import { useAgentSessionsStore } from '@/stores/agentSessions';
 import { BUILTIN_AGENT_IDS, useSettingsStore } from '@/stores/settings';
@@ -75,6 +75,9 @@ export function AgentPanel({ repoPath, cwd, isActive = false, onSwitchWorktree }
   const defaultAgentId = useMemo(() => getDefaultAgentId(agentSettings), [agentSettings]);
   const { setAgentCount, registerAgentCloseHandler } = useWorktreeActivityStore();
 
+  // Track worktrees that have been initialized to prevent StrictMode double-init
+  const initializedWorktreesRef = useRef<Set<string>>(new Set());
+
   // Use zustand store for sessions - state persists even when component unmounts
   const allSessions = useAgentSessionsStore((state) => state.sessions);
   const activeIds = useAgentSessionsStore((state) => state.activeIds);
@@ -105,10 +108,16 @@ export function AgentPanel({ repoPath, cwd, isActive = false, onSwitchWorktree }
 
   // Create initial session when switching to a new repo+worktree
   useEffect(() => {
+    const worktreeKey = `${repoPath}:${cwd}`;
     if (currentWorktreeSessions.length === 0 && cwd) {
+      // Prevent StrictMode double-init: check ref before checking store
+      if (initializedWorktreesRef.current.has(worktreeKey)) {
+        return;
+      }
       // Double check to prevent duplicates
       const hasSession = allSessions.some((s) => s.repoPath === repoPath && s.cwd === cwd);
       if (!hasSession) {
+        initializedWorktreesRef.current.add(worktreeKey);
         const newSession = createSession(repoPath, cwd, defaultAgentId, customAgents);
         addSession(newSession);
       }
