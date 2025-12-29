@@ -1,4 +1,4 @@
-import { Check, Copy, Download, ExternalLink, RefreshCw, Square } from 'lucide-react';
+import { Check, Copy, Download, ExternalLink, Github, RefreshCw, Square } from 'lucide-react';
 import * as React from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -214,7 +214,15 @@ export function HapiSettings() {
     <div className="space-y-6">
       <div>
         <div className="flex items-center gap-2">
-          <h3 className="text-lg font-medium">{t('Remote Sharing (Hapi)')}</h3>
+          <h3 className="text-lg font-medium">Hapi</h3>
+          <button
+            type="button"
+            onClick={() => window.electronAPI.shell.openExternal('https://github.com/tiann/hapi')}
+            className="text-muted-foreground hover:text-foreground transition-colors"
+            title="GitHub"
+          >
+            <Github className="h-4 w-4" />
+          </button>
           {hapiGlobal.installed ? (
             <span className="rounded-full bg-green-500/10 px-2 py-0.5 text-xs text-green-600 dark:text-green-400">
               v{hapiGlobal.version || '?'}
@@ -233,7 +241,7 @@ export function HapiSettings() {
       {/* Enable Switch */}
       <div className="flex items-center justify-between">
         <div className="space-y-0.5">
-          <span className="text-sm font-medium">{t('Enable Remote Sharing')}</span>
+          <span className="text-sm font-medium">{t('Start Hapi Service')}</span>
           <p className="text-xs text-muted-foreground">
             {t('Start Hapi server for remote access')}
             {status.running && status.port && ` (Port: ${status.port})`}
