@@ -52,6 +52,8 @@ function getDefaultLocale(): Locale {
 
 export type Theme = 'light' | 'dark' | 'system' | 'sync-terminal';
 
+export type LayoutMode = 'columns' | 'tree';
+
 // Apply app theme (dark/light mode)
 function applyAppTheme(theme: Theme, terminalTheme: string) {
   const root = document.documentElement;
@@ -347,6 +349,7 @@ export const defaultSearchKeybindings: SearchKeybindings = {
 
 interface SettingsState {
   theme: Theme;
+  layoutMode: LayoutMode;
   language: Locale;
   fontSize: number;
   fontFamily: string;
@@ -377,6 +380,7 @@ interface SettingsState {
   hapiSettings: HapiSettings;
 
   setTheme: (theme: Theme) => void;
+  setLayoutMode: (mode: LayoutMode) => void;
   setLanguage: (language: Locale) => void;
   setFontSize: (size: number) => void;
   setFontFamily: (family: string) => void;
@@ -423,6 +427,7 @@ export const useSettingsStore = create<SettingsState>()(
   persist(
     (set, get) => ({
       theme: 'system',
+      layoutMode: 'columns',
       language: getDefaultLocale(),
       fontSize: 14,
       fontFamily: 'Inter',
@@ -464,6 +469,7 @@ export const useSettingsStore = create<SettingsState>()(
         }
         set({ theme });
       },
+      setLayoutMode: (layoutMode) => set({ layoutMode }),
       setLanguage: (language) => {
         document.documentElement.lang = language === 'zh' ? 'zh-CN' : 'en';
         window.electronAPI.app.setLanguage(language);
