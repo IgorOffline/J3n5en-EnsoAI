@@ -401,7 +401,16 @@ export function SessionBar({
 
               {/* Agent selection menu for new session */}
               {showAgentMenu && (
-                <div className="absolute top-full right-[-10px] z-50 min-w-32 pt-1">
+                <div
+                  className={cn(
+                    'absolute right-[-10px] z-50 min-w-32',
+                    // Show menu above when bar is in bottom half of container
+                    containerRef.current &&
+                      state.y > containerRef.current.getBoundingClientRect().height / 2
+                      ? 'bottom-full pb-1'
+                      : 'top-full pt-1'
+                  )}
+                >
                   <div className="rounded-lg border bg-popover p-1 shadow-lg">
                     <div className="px-2 py-1 text-xs text-muted-foreground">
                       {t('Select Agent')}
