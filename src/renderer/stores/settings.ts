@@ -382,6 +382,7 @@ interface SettingsState {
   codeReview: CodeReviewSettings;
   allowNightlyUpdates: boolean;
   hapiSettings: HapiSettings;
+  defaultWorktreePath: string; // Default path for creating worktrees
   proxySettings: ProxySettings;
 
   setTheme: (theme: Theme) => void;
@@ -416,6 +417,7 @@ interface SettingsState {
   setCodeReview: (settings: Partial<CodeReviewSettings>) => void;
   setAllowNightlyUpdates: (enabled: boolean) => void;
   setHapiSettings: (settings: Partial<HapiSettings>) => void;
+  setDefaultWorktreePath: (path: string) => void;
   setProxySettings: (settings: Partial<ProxySettings>) => void;
 }
 
@@ -462,6 +464,7 @@ export const useSettingsStore = create<SettingsState>()(
       codeReview: defaultCodeReviewSettings,
       allowNightlyUpdates: false,
       hapiSettings: defaultHapiSettings,
+      defaultWorktreePath: '', // Empty means use default ~/ensoai/workspaces
       proxySettings: defaultProxySettings,
 
       setTheme: (theme) => {
@@ -587,6 +590,7 @@ export const useSettingsStore = create<SettingsState>()(
         set((state) => ({
           hapiSettings: { ...state.hapiSettings, ...settings },
         })),
+      setDefaultWorktreePath: (defaultWorktreePath) => set({ defaultWorktreePath }),
       setProxySettings: (settings) => {
         set((state) => ({
           proxySettings: { ...state.proxySettings, ...settings },
