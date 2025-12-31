@@ -29,8 +29,8 @@ interface ChangesListProps {
   onFileClick: (file: { path: string; staged: boolean }) => void;
   onStage: (paths: string[]) => void;
   onUnstage: (paths: string[]) => void;
-  onDiscard: (path: string) => void;
-  onDeleteUntracked?: (path: string) => void;
+  onDiscard: (paths: string[]) => void;
+  onDeleteUntracked?: (paths: string[]) => void;
   onRefresh?: () => void;
   isRefreshing?: boolean;
   repoPath?: string;
@@ -345,7 +345,7 @@ export function ChangesList({
                       onAction={() => onStage([file.path])}
                       actionIcon={Plus}
                       actionTitle={t('Stage')}
-                      onDiscard={() => onDiscard(file.path)}
+                      onDiscard={() => onDiscard([file.path])}
                     />
                   ))}
                 </div>
@@ -379,7 +379,9 @@ export function ChangesList({
                       onAction={() => onStage([file.path])}
                       actionIcon={Plus}
                       actionTitle={t('Stage')}
-                      onDiscard={onDeleteUntracked ? () => onDeleteUntracked(file.path) : undefined}
+                      onDiscard={
+                        onDeleteUntracked ? () => onDeleteUntracked([file.path]) : undefined
+                      }
                     />
                   ))}
                 </div>

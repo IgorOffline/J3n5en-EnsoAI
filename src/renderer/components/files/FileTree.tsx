@@ -48,7 +48,18 @@ export function FileTree({
 }: FileTreeProps) {
   const [editingPath, setEditingPath] = useState<string | null>(null);
   const [editValue, setEditValue] = useState('');
-  const [selectedPath, setSelectedPath] = useState<string | null>(null);
+  const [selectedNode, setSelectedNode] = useState<{ path: string; isDirectory: boolean } | null>(
+    null
+  );
+
+  // 计算新建文件/文件夹的目标路径
+  const getCreateTargetPath = useCallback(() => {
+    if (!selectedNode) return rootPath;
+    // 如果选中的是目录，在该目录下创建
+    if (selectedNode.isDirectory) return selectedNode.path;
+    // 如果选中的是文件，在其父目录下创建
+    return selectedNode.path.substring(0, selectedNode.path.lastIndexOf('/')) || rootPath;
+  }, [selectedNode, rootPath]);
 
   const handleStartRename = useCallback((path: string, currentName: string) => {
     setEditingPath(path);
@@ -113,7 +124,10 @@ export function FileTree({
         <div className="flex items-center justify-end gap-1 pl-2 pr-3 pb-1">
           <button
             type="button"
-            onClick={() => rootPath && onCreateFile(rootPath)}
+            onClick={() => {
+              const targetPath = getCreateTargetPath();
+              if (targetPath) onCreateFile(targetPath);
+            }}
             className="p-1 text-muted-foreground hover:text-foreground rounded"
             title="New File"
           >
@@ -121,7 +135,10 @@ export function FileTree({
           </button>
           <button
             type="button"
-            onClick={() => rootPath && onCreateDirectory(rootPath)}
+            onClick={() => {
+              const targetPath = getCreateTargetPath();
+              if (targetPath) onCreateDirectory(targetPath);
+            }}
             className="p-1 text-muted-foreground hover:text-foreground rounded"
             title="New Folder"
           >
@@ -153,13 +170,15 @@ export function FileTree({
             node={node}
             depth={0}
             expandedPaths={expandedPaths}
-            selectedPath={selectedPath}
+            selectedPath={selectedNode?.path ?? null}
             editingPath={editingPath}
             editValue={editValue}
             onToggleExpand={onToggleExpand}
-            onFileClick={(path) => {
-              setSelectedPath(path);
-              onFileClick(path);
+            onFileClick={(path, isDirectory) => {
+              setSelectedNode({ path, isDirectory });
+              if (!isDirectory) {
+                onFileClick(path);
+              }
             }}
             onCreateFile={onCreateFile}
             onCreateDirectory={onCreateDirectory}
@@ -183,7 +202,7 @@ interface FileTreeNodeComponentProps {
   editingPath: string | null;
   editValue: string;
   onToggleExpand: (path: string) => void;
-  onFileClick: (path: string) => void;
+  onFileClick: (path: string, isDirectory: boolean) => void;
   onCreateFile: (parentPath: string) => void;
   onCreateDirectory: (parentPath: string) => void;
   onStartRename: (path: string, currentName: string) => void;
@@ -248,11 +267,11 @@ function FileTreeNodeComponent({
   const iconColor = getFileIconColor(actualNode.name, actualNode.isDirectory);
 
   const handleClick = useCallback(() => {
+    // 总是更新选中状态
+    onFileClick(actualNode.path, actualNode.isDirectory);
     if (actualNode.isDirectory) {
       // 点击压缩节点时，展开/折叠实际节点
       onToggleExpand(actualNode.path);
-    } else {
-      onFileClick(actualNode.path);
     }
   }, [actualNode, onToggleExpand, onFileClick]);
 

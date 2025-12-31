@@ -538,13 +538,13 @@ export function SourceControlPanel({
                 ? confirmAction.paths.length > 1
                   ? t('Discard {{count}} changes', { count: confirmAction.paths.length })
                   : t('Discard changes')
-                : confirmAction?.paths.length > 1
-                  ? t('Delete {{count}} files', { count: confirmAction.paths.length })
+                : (confirmAction?.paths.length ?? 0) > 1
+                  ? t('Delete {{count}} files', { count: confirmAction?.paths.length ?? 0 })
                   : t('Delete file')}
             </AlertDialogTitle>
             <AlertDialogDescription>
               {confirmAction?.paths.length === 1
-                ? confirmAction?.type === 'discard'
+                ? confirmAction.type === 'discard'
                   ? tNode(
                       'Are you sure you want to discard changes to {{path}}? This cannot be undone.',
                       {
@@ -560,7 +560,7 @@ export function SourceControlPanel({
                       {
                         path: (
                           <span className="font-medium text-foreground break-all">
-                            {confirmAction?.paths[0]}
+                            {confirmAction.paths[0]}
                           </span>
                         ),
                       }
@@ -572,7 +572,7 @@ export function SourceControlPanel({
                     )
                   : t(
                       'Are you sure you want to delete {{count}} untracked files? This cannot be undone.',
-                      { count: confirmAction?.paths.length }
+                      { count: confirmAction?.paths.length ?? 0 }
                     )}
             </AlertDialogDescription>
           </AlertDialogHeader>
