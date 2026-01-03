@@ -9,7 +9,7 @@ import type {
   McpStdioConfig,
   McpStdioServer,
 } from '@shared/types';
-import { isHttpMcpConfig, isHttpMcpServer } from '@shared/types';
+import { isHttpMcpConfig, isHttpMcpServer, isStdioMcpServer } from '@shared/types';
 
 function getClaudeJsonPath(): string {
   return path.join(os.homedir(), '.claude.json');
@@ -149,10 +149,10 @@ export function upsertMcpServer(server: McpServer): boolean {
     data.mcpServers = {};
   }
 
+  const existingConfig = data.mcpServers[server.id];
+
   if (server.enabled) {
     // 检查是否已存在 HTTP/SSE 类型的配置
-    const existingConfig = data.mcpServers[server.id];
-
     if (existingConfig && isHttpMcpConfig(existingConfig)) {
       // HTTP/SSE 类型，保留原有配置不修改
       // 因为这类配置需要通过 claude mcp 命令管理
@@ -160,10 +160,14 @@ export function upsertMcpServer(server: McpServer): boolean {
     } else if (isHttpMcpServer(server)) {
       // 新的 HTTP/SSE 服务器
       data.mcpServers[server.id] = serverToConfig(server);
-    } else {
-      // stdio 类型
+    } else if (isStdioMcpServer(server) && server.command) {
+      // stdio 类型且有有效的 command
       data.mcpServers[server.id] = serverToConfig(server);
+    } else if (existingConfig) {
+      // server 数据无效但存在原配置，保留原配置
+      data.mcpServers[server.id] = existingConfig;
     }
+    // 如果 server 无效且无原配置，不写入
   } else {
     // 如果禁用了，从配置中移除
     delete data.mcpServers[server.id];

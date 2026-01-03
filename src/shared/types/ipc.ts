@@ -66,6 +66,7 @@ export const IPC_CHANNELS = {
   // Agent
   AGENT_LIST: 'agent:list',
   AGENT_STOP_NOTIFICATION: 'agent:stop:notification',
+  AGENT_STATUS_UPDATE: 'agent:status:update',
 
   // App
   APP_GET_PATH: 'app:getPath',
@@ -122,6 +123,8 @@ export const IPC_CHANNELS = {
   MCP_SELECTION_CHANGED: 'mcp:selection:changed',
   MCP_AT_MENTIONED: 'mcp:at:mentioned',
   MCP_STOP_HOOK_SET: 'mcp:stopHook:set',
+  MCP_STATUSLINE_HOOK_SET: 'mcp:statusLineHook:set',
+  MCP_STATUSLINE_HOOK_STATUS: 'mcp:statusLineHook:status',
 
   // Claude Provider
   CLAUDE_PROVIDER_READ_SETTINGS: 'claude:provider:readSettings',

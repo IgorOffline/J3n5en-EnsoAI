@@ -173,12 +173,43 @@ export interface SearchKeybindings {
   searchContent: TerminalKeybinding;
 }
 
+// Status Line display field settings
+export interface StatusLineFieldSettings {
+  model: boolean;
+  context: boolean;
+  cost: boolean;
+  duration: boolean;
+  lines: boolean;
+  tokens: boolean; // Input/Output tokens
+  cache: boolean; // Cache hit tokens
+  apiTime: boolean; // API duration vs total duration
+  currentDir: boolean; // Current working directory
+  projectDir: boolean; // Project directory
+  version: boolean; // Claude version
+}
+
+export const defaultStatusLineFieldSettings: StatusLineFieldSettings = {
+  model: true,
+  context: true,
+  cost: true,
+  duration: false,
+  lines: false,
+  tokens: false,
+  cache: false,
+  apiTime: false,
+  currentDir: false,
+  projectDir: false,
+  version: false,
+};
+
 // Claude Code integration settings
 export interface ClaudeCodeIntegrationSettings {
   enabled: boolean;
   selectionChangedDebounce: number; // in milliseconds
   atMentionedKeybinding: TerminalKeybinding;
   stopHookEnabled: boolean; // Enable Stop hook for precise agent completion notifications
+  statusLineEnabled: boolean; // Enable Status Line hook for displaying agent status
+  statusLineFields: StatusLineFieldSettings; // Which fields to display in status line
   providers: import('@shared/types').ClaudeProvider[];
 }
 
@@ -187,6 +218,8 @@ export const defaultClaudeCodeIntegrationSettings: ClaudeCodeIntegrationSettings
   selectionChangedDebounce: 300,
   atMentionedKeybinding: { key: 'm', meta: true, shift: true }, // Cmd/Ctrl+Shift+M
   stopHookEnabled: true, // Enable Stop hook for precise agent completion notifications
+  statusLineEnabled: true, // Enable Status Line hook by default
+  statusLineFields: defaultStatusLineFieldSettings,
   providers: [],
 };
 
@@ -809,6 +842,10 @@ export const useSettingsStore = create<SettingsState>()(
           claudeCodeIntegration: {
             ...currentState.claudeCodeIntegration,
             ...persisted.claudeCodeIntegration,
+            statusLineFields: {
+              ...currentState.claudeCodeIntegration.statusLineFields,
+              ...persisted.claudeCodeIntegration?.statusLineFields,
+            },
           },
           commitMessageGenerator: {
             ...currentState.commitMessageGenerator,
