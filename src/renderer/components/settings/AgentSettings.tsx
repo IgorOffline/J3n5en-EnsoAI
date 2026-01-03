@@ -276,7 +276,10 @@ export function AgentSettings() {
   };
 
   const handleDefaultChange = (agentId: string) => {
-    if (agentSettings[agentId]?.enabled && agentDetectionStatus[agentId]?.installed) {
+    // For hapi/happy agents, check the base agent's detection status
+    const baseAgentId = agentId.replace(/-(hapi|happy)$/, '');
+    const detectionId = baseAgentId !== agentId ? baseAgentId : agentId;
+    if (agentSettings[agentId]?.enabled && agentDetectionStatus[detectionId]?.installed) {
       setAgentDefault(agentId);
     }
   };

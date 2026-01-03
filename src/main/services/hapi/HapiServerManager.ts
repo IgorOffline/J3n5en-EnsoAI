@@ -3,7 +3,7 @@ import { exec, spawn, spawnSync } from 'node:child_process';
 import { randomBytes } from 'node:crypto';
 import { EventEmitter } from 'node:events';
 import { promisify } from 'node:util';
-import { getEnvForCommand, getShellForCommand } from '../../utils/shell';
+import { execInPty, getEnvForCommand, getShellForCommand } from '../../utils/shell';
 
 const execAsync = promisify(exec);
 
@@ -113,8 +113,8 @@ class HapiServerManager extends EventEmitter {
 
   /**
    * Check if happy is globally installed (cached)
-   * Uses npm to check if happy-coder package is installed globally.
-   * This is more reliable than running 'happy --version' which may start child processes.
+   * Uses PTY to run 'happy --version' and force kills after timeout.
+   * This works regardless of package manager (npm, pnpm, yarn, etc.)
    */
   async checkHappyGlobalInstall(forceRefresh = false): Promise<HappyGlobalStatus> {
     // Return cached result if still valid
@@ -127,46 +127,23 @@ class HapiServerManager extends EventEmitter {
     }
 
     try {
-      // Use npm list to check if happy-coder is installed globally
-      // This is more reliable than running 'happy --version' which may hang
-      // Run npm directly with enhanced PATH to ensure it's found
-      const { stdout } = await execAsync('npm list -g happy-coder --depth=0 --json', {
-        timeout: 15000,
-        env: getEnvForCommand(),
-      });
-
-      // Parse npm output to get version
-      // Format: {"dependencies":{"happy-coder":{"version":"0.13.0",...}}}
-      const npmOutput = JSON.parse(stdout);
-      const happyInfo = npmOutput?.dependencies?.['happy-coder'];
-
-      if (happyInfo) {
+      // Run happy --version in PTY and force kill after 10 seconds
+      // Use longer timeout for slow environments (PowerShell startup, WSL cold start)
+      // happy --version may hang due to child processes, but we can still get version from output
+      const stdout = await execInPty('happy --version', { timeout: 10000, killOnTimeout: true });
+      const match = stdout.match(/(\d+\.\d+\.\d+)/);
+      if (match || stdout.toLowerCase().includes('happy')) {
+        // Found version or happy output - installed
         this.happyGlobalStatus = {
           installed: true,
-          version: happyInfo.version,
+          version: match ? match[1] : undefined,
         };
       } else {
+        // No valid output - not installed
         this.happyGlobalStatus = { installed: false };
+        return this.happyGlobalStatus;
       }
-    } catch (error: unknown) {
-      // npm list returns exit code 1 if package not found, check stdout anyway
-      const execError = error as { stdout?: string };
-      if (execError.stdout) {
-        try {
-          const npmOutput = JSON.parse(execError.stdout);
-          const happyInfo = npmOutput?.dependencies?.['happy-coder'];
-          if (happyInfo) {
-            this.happyGlobalStatus = {
-              installed: true,
-              version: happyInfo.version,
-            };
-            this.happyGlobalCacheTimestamp = Date.now();
-            return this.happyGlobalStatus;
-          }
-        } catch {
-          // JSON parse failed
-        }
-      }
+    } catch {
       this.happyGlobalStatus = { installed: false };
       // Don't cache failed result - allow immediate retry
       return this.happyGlobalStatus;
