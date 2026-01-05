@@ -28,14 +28,6 @@ interface AddRepositoryDialogProps {
   onCloneComplete: (path: string) => void;
 }
 
-// Progress stage display labels
-const stageLabels: Record<string, string> = {
-  counting: 'Counting objects...',
-  compressing: 'Compressing objects...',
-  receiving: 'Receiving objects...',
-  resolving: 'Resolving deltas...',
-};
-
 export function AddRepositoryDialog({
   open,
   onOpenChange,
@@ -43,6 +35,14 @@ export function AddRepositoryDialog({
   onCloneComplete,
 }: AddRepositoryDialogProps) {
   const { t } = useI18n();
+
+  // Progress stage display labels (使用 t() 支持国际化)
+  const stageLabels: Record<string, string> = {
+    counting: t('Counting objects...'),
+    compressing: t('Compressing objects...'),
+    receiving: t('Receiving objects...'),
+    resolving: t('Resolving deltas...'),
+  };
   const [mode, setMode] = React.useState<AddMode>('local');
 
   // Local mode state
@@ -221,8 +221,8 @@ export function AddRepositoryDialog({
 
   const getProgressLabel = () => {
     if (!cloneProgress) return '';
-    const label = stageLabels[cloneProgress.stage] || cloneProgress.stage;
-    return t(label);
+    // stageLabels 已使用 t() 翻译，直接返回即可
+    return stageLabels[cloneProgress.stage] || cloneProgress.stage;
   };
 
   const isSubmitDisabled = () => {
