@@ -513,14 +513,8 @@ export function TreeSidebar({
                       onDrop={(e) => handleRepoDrop(e, index)}
                       onContextMenu={(e) => handleRepoContextMenu(e, repo)}
                       onClick={() => {
-                        // Always toggle expand/collapse
+                        // Only toggle expand/collapse, don't auto-activate worktree
                         toggleRepoExpanded(repo.path);
-                        // Select if not already selected
-                        if (!isSelected) {
-                          // Skip auto-expand since user explicitly clicked
-                          skipAutoExpandRef.current = true;
-                          onSelectRepo(repo.path);
-                        }
                       }}
                       className={cn(
                         'flex w-full items-center gap-1 rounded-lg px-2 py-2 text-left transition-colors cursor-pointer',
