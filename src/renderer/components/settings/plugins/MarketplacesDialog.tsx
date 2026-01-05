@@ -32,7 +32,7 @@ export function MarketplacesDialog({ open, onOpenChange }: MarketplacesDialogPro
     try {
       const list = await window.electronAPI.claudeConfig.plugins.marketplaces.list();
       setMarketplaces(list);
-    } catch {
+    } catch (error) {
       console.error('Failed to load marketplaces:', error);
     }
   }, []);
