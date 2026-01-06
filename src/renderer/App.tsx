@@ -211,6 +211,7 @@ export default function App() {
   const {
     data: worktrees = [],
     isLoading: worktreesLoading,
+    isFetching: worktreesFetching,
     refetch,
   } = useWorktreeList(selectedRepo);
 
@@ -456,11 +457,11 @@ export default function App() {
       const found = worktrees.find((wt) => wt.path === activeWorktree.path);
       if (found && found !== activeWorktree) {
         setActiveWorktree(found);
-      } else if (!found) {
+      } else if (!found && !worktreesFetching) {
         setActiveWorktree(null);
       }
     }
-  }, [worktrees, activeWorktree]);
+  }, [worktrees, activeWorktree, worktreesFetching]);
 
   const handleSelectRepo = (repoPath: string) => {
     // Save current worktree's tab state before switching
@@ -585,7 +586,7 @@ export default function App() {
       });
 
       const repoSettings = getRepositorySettings(selectedRepo);
-      if (repoSettings.autoInitWorktree && repoSettings.initScript.trim()) {
+      if (repoSettings.autoInitWorktree) {
         const newWorktreePath = options.path;
         const newWorktree: GitWorktree = {
           path: newWorktreePath,
@@ -596,12 +597,15 @@ export default function App() {
           prunable: false,
         };
 
-        setPendingScript({
-          worktreePath: newWorktreePath,
-          script: repoSettings.initScript,
-        });
         handleSelectWorktree(newWorktree);
-        setActiveTab('terminal');
+
+        if (repoSettings.initScript.trim()) {
+          setPendingScript({
+            worktreePath: newWorktreePath,
+            script: repoSettings.initScript,
+          });
+          setActiveTab('terminal');
+        }
       }
     } finally {
       refetchBranches();
