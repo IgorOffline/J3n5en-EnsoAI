@@ -327,12 +327,8 @@ export function RepositorySidebar({
                     </div>
 
                     {/* Tags (Group) */}
-                    <div className="flex w-full items-center gap-1 pl-6">
-                      {!group ? (
-                        <span className="inline-flex h-5 items-center rounded-md border bg-muted/40 px-1.5 text-[10px] text-muted-foreground">
-                          {t('No Group')}
-                        </span>
-                      ) : (
+                    {group && (
+                      <div className="flex w-full items-center gap-1 pl-6">
                         <span
                           className="inline-flex h-5 max-w-full items-center gap-1 rounded-md border px-1.5 text-[10px] text-foreground/80"
                           style={{
@@ -346,8 +342,8 @@ export function RepositorySidebar({
                           )}
                           <span className="truncate">{group.name}</span>
                         </span>
-                      )}
-                    </div>
+                      </div>
+                    )}
                     {/* Path */}
                     <div
                       className={cn(

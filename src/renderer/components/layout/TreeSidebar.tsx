@@ -607,20 +607,14 @@ export function TreeSidebar({
                       </div>
 
                       {/* Row 2: Tags */}
-                      <div className="flex items-center gap-1 pl-6">
-                        {(() => {
-                          const group = repo.groupId ? groupsById.get(repo.groupId) : undefined;
-                          if (!group) {
-                            return (
-                              <span className="inline-flex h-5 items-center rounded-md border bg-muted/40 px-1.5 text-[10px] text-muted-foreground">
-                                {t('No Group')}
-                              </span>
-                            );
-                          }
+                      {(() => {
+                        const group = repo.groupId ? groupsById.get(repo.groupId) : undefined;
+                        if (!group) return null;
 
-                          const bg = hexToRgba(group.color, 0.12);
-                          const border = hexToRgba(group.color, 0.35);
-                          return (
+                        const bg = hexToRgba(group.color, 0.12);
+                        const border = hexToRgba(group.color, 0.35);
+                        return (
+                          <div className="flex items-center gap-1 pl-6">
                             <span
                               className="inline-flex h-5 max-w-full items-center gap-1 rounded-md border px-1.5 text-[10px] text-foreground/80"
                               style={{
@@ -634,9 +628,9 @@ export function TreeSidebar({
                               )}
                               <span className="truncate">{group.name}</span>
                             </span>
-                          );
-                        })()}
-                      </div>
+                          </div>
+                        );
+                      })()}
 
                       {/* Row 3: Path */}
                       <span
