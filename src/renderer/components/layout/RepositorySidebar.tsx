@@ -1,9 +1,6 @@
 import {
-  Check,
-  ChevronRight,
   FolderGit2,
   FolderMinus,
-  FolderSymlink,
   PanelLeftClose,
   Plus,
   Search,
@@ -12,7 +9,12 @@ import {
 } from 'lucide-react';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { ALL_GROUP_ID, type RepositoryGroup } from '@/App/constants';
-import { CreateGroupDialog, GroupEditDialog, GroupSelector } from '@/components/group';
+import {
+  CreateGroupDialog,
+  GroupEditDialog,
+  GroupSelector,
+  MoveToGroupSubmenu,
+} from '@/components/group';
 import { RepositorySettingsDialog } from '@/components/repository/RepositorySettingsDialog';
 import {
   AlertDialog,
@@ -192,7 +194,7 @@ export function RepositorySidebar({
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter((repo) => repo.name.toLowerCase().includes(query));
     }
-    return filtered.map((repo, index) => ({ repo, originalIndex: repositories.indexOf(repo) }));
+    return filtered.map((repo) => ({ repo, originalIndex: repositories.indexOf(repo) }));
   }, [repositories, activeGroupId, searchQuery]);
 
   return (
@@ -378,55 +380,17 @@ export function RepositorySidebar({
             className="fixed z-50 min-w-32 rounded-lg border bg-popover p-1 shadow-lg"
             style={{ left: menuPosition.x, top: menuPosition.y }}
           >
-            {/* Move to Group submenu */}
             {onMoveToGroup && groups.length > 0 && (
-              <div className="relative group/submenu">
-                <button
-                  type="button"
-                  className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent"
-                >
-                  <FolderSymlink className="h-4 w-4" />
-                  {t('Move to Group')}
-                  <ChevronRight className="ml-auto h-3.5 w-3.5" />
-                </button>
-                <div className="absolute left-full top-0 z-50 min-w-36 rounded-lg border bg-popover p-1 shadow-lg opacity-0 invisible group-hover/submenu:opacity-100 group-hover/submenu:visible transition-all">
-                  <button
-                    type="button"
-                    className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent"
-                    onClick={() => {
-                      setMenuOpen(false);
-                      if (menuRepo) {
-                        onMoveToGroup(menuRepo.path, null);
-                      }
-                    }}
-                  >
-                    <span className="w-4 h-4 flex items-center justify-center">
-                      {!menuRepo?.groupId && <Check className="h-3.5 w-3.5" />}
-                    </span>
-                    <span className="text-muted-foreground">{t('No Group')}</span>
-                  </button>
-                  <div className="my-1 h-px bg-border" />
-                  {groups.map((group) => (
-                    <button
-                      key={group.id}
-                      type="button"
-                      className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent"
-                      onClick={() => {
-                        setMenuOpen(false);
-                        if (menuRepo) {
-                          onMoveToGroup(menuRepo.path, group.id);
-                        }
-                      }}
-                    >
-                      <span className="w-4 h-4 flex items-center justify-center">
-                        {menuRepo?.groupId === group.id && <Check className="h-3.5 w-3.5" />}
-                      </span>
-                      {group.emoji && <span>{group.emoji}</span>}
-                      <span className="truncate">{group.name}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
+              <MoveToGroupSubmenu
+                groups={groups}
+                currentGroupId={menuRepo?.groupId}
+                onMove={(groupId) => {
+                  if (menuRepo) {
+                    onMoveToGroup(menuRepo.path, groupId);
+                  }
+                }}
+                onClose={() => setMenuOpen(false)}
+              />
             )}
 
             {onMoveToGroup && groups.length > 0 && <div className="my-1 h-px bg-border" />}

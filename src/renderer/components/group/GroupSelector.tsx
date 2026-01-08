@@ -106,7 +106,6 @@ export function GroupSelector({
                   'hover:bg-accent/50'
                 )}
               >
-                <span className="text-base">⭐</span>
                 <span className="min-w-0 flex-1 truncate text-left">{t('All')}</span>
                 <span className="shrink-0 text-xs text-muted-foreground">{totalCount}</span>
                 {isAllSelected && <Check className="h-4 w-4 shrink-0 text-primary" />}

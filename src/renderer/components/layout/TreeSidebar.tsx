@@ -1,13 +1,11 @@
 import type { GitBranch as GitBranchType, GitWorktree, WorktreeCreateOptions } from '@shared/types';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
-  Check,
   ChevronRight,
   Copy,
   FolderGit2,
   FolderMinus,
   FolderOpen,
-  FolderSymlink,
   GitBranch,
   GitMerge,
   PanelLeftClose,
@@ -23,7 +21,12 @@ import {
 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ALL_GROUP_ID, type Repository, type RepositoryGroup } from '@/App/constants';
-import { CreateGroupDialog, GroupEditDialog, GroupSelector } from '@/components/group';
+import {
+  CreateGroupDialog,
+  GroupEditDialog,
+  GroupSelector,
+  MoveToGroupSubmenu,
+} from '@/components/group';
 import { RepositorySettingsDialog } from '@/components/repository/RepositorySettingsDialog';
 import {
   AlertDialog,
@@ -778,56 +781,17 @@ export function TreeSidebar({
               {t('Repository Settings')}
             </button>
 
-            {/* Move to Group submenu */}
             {onMoveToGroup && groups.length > 0 && (
-              <div className="relative group/submenu">
-                <button
-                  type="button"
-                  className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent"
-                >
-                  <FolderSymlink className="h-4 w-4" />
-                  {t('Move to Group')}
-                  <ChevronRight className="ml-auto h-3.5 w-3.5" />
-                </button>
-                <div className="absolute left-full top-0 z-50 min-w-36 rounded-lg border bg-popover p-1 shadow-lg opacity-0 invisible group-hover/submenu:opacity-100 group-hover/submenu:visible transition-all">
-                  {/* No Group option */}
-                  <button
-                    type="button"
-                    className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent"
-                    onClick={() => {
-                      setRepoMenuOpen(false);
-                      if (repoMenuTarget) {
-                        onMoveToGroup(repoMenuTarget.path, null);
-                      }
-                    }}
-                  >
-                    <span className="w-4 h-4 flex items-center justify-center">
-                      {!repoMenuTarget?.groupId && <Check className="h-3.5 w-3.5" />}
-                    </span>
-                    <span className="text-muted-foreground">{t('No Group')}</span>
-                  </button>
-                  <div className="my-1 h-px bg-border" />
-                  {groups.map((group) => (
-                    <button
-                      key={group.id}
-                      type="button"
-                      className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent"
-                      onClick={() => {
-                        setRepoMenuOpen(false);
-                        if (repoMenuTarget) {
-                          onMoveToGroup(repoMenuTarget.path, group.id);
-                        }
-                      }}
-                    >
-                      <span className="w-4 h-4 flex items-center justify-center">
-                        {repoMenuTarget?.groupId === group.id && <Check className="h-3.5 w-3.5" />}
-                      </span>
-                      <span>{group.emoji}</span>
-                      <span className="truncate">{group.name}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
+              <MoveToGroupSubmenu
+                groups={groups}
+                currentGroupId={repoMenuTarget?.groupId}
+                onMove={(groupId) => {
+                  if (repoMenuTarget) {
+                    onMoveToGroup(repoMenuTarget.path, groupId);
+                  }
+                }}
+                onClose={() => setRepoMenuOpen(false)}
+              />
             )}
 
             {/* Separator */}

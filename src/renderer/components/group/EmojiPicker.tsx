@@ -2,6 +2,7 @@ import EmojiPickerReact, { type EmojiClickData, Theme } from 'emoji-picker-react
 import { Smile, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { useI18n } from '@/i18n';
 import { cn } from '@/lib/utils';
 import { useSettingsStore } from '@/stores/settings';
 
@@ -11,6 +12,7 @@ interface EmojiPickerProps {
 }
 
 export function EmojiPicker({ value, onChange }: EmojiPickerProps) {
+  const { t } = useI18n();
   const [isOpen, setIsOpen] = useState(false);
   const [position, setPosition] = useState({ top: 0, left: 0 });
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -54,14 +56,14 @@ export function EmojiPicker({ value, onChange }: EmojiPickerProps) {
           ) : (
             <Smile className="h-4 w-4 text-muted-foreground" />
           )}
-          <span className="text-muted-foreground">{value ? 'Change' : 'Select'}</span>
+          <span className="text-muted-foreground">{value ? t('Change') : t('Select')}</span>
         </button>
         {value && (
           <button
             type="button"
             onClick={() => onChange('')}
             className="flex h-9 w-9 items-center justify-center rounded-md border text-muted-foreground hover:bg-accent/50 transition-colors"
-            title="Clear"
+            title={t('Clear')}
           >
             <X className="h-4 w-4" />
           </button>
@@ -85,7 +87,7 @@ export function EmojiPicker({ value, onChange }: EmojiPickerProps) {
                 theme={getTheme()}
                 width={320}
                 height={400}
-                searchPlaceHolder="Search emoji..."
+                searchPlaceHolder={t('Search emoji...')}
                 previewConfig={{ showPreview: false }}
               />
             </div>
