@@ -111,10 +111,16 @@
 
   html {
     font-size: var(--font-size-base);
+    background: transparent;
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply text-foreground;
+    background: transparent;
+  }
+
+  body.bg-background {
+    @apply bg-background;
   }
 
   button:not(:disabled),
@@ -220,4 +226,14 @@
   background-color: var(--accent) !important;
   width: 3px !important;
   margin-left: 3px;
+}
+
+.xterm,
+.xterm-viewport,
+.xterm-screen,
+.xterm-scroll-area,
+.xterm-scrollable-element {
+  width: 100% !important;
+  height: 100% !important;
+  background-color: inherit !important;
 }

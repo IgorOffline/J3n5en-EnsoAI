@@ -116,15 +116,22 @@ export function AgentPanel({ repoPath, cwd, isActive = false, onSwitchWorktree }
     xtermKeybindings,
     hapiSettings,
     autoCreateSessionOnActivate,
+    claudeCodeIntegration,
   } = useSettingsStore();
+  const statusLineEnabled = claudeCodeIntegration.statusLineEnabled;
   const defaultAgentId = useMemo(() => getDefaultAgentId(agentSettings), [agentSettings]);
   const { setAgentCount, registerAgentCloseHandler } = useWorktreeActivityStore();
 
   // Global session IDs to keep terminals mounted across group moves
   const [globalSessionIds, setGlobalSessionIds] = useState<Set<string>>(new Set());
 
-  // StatusLine height for terminal container positioning
   const [statusLineHeight, setStatusLineHeight] = useState(0);
+
+  useEffect(() => {
+    if (!statusLineEnabled) {
+      setStatusLineHeight(0);
+    }
+  }, [statusLineEnabled]);
 
   // Use zustand store for sessions and group states - state persists even when component unmounts
   const allSessions = useAgentSessionsStore((state) => state.sessions);
@@ -431,9 +438,7 @@ export function AgentPanel({ repoPath, cwd, isActive = false, onSwitchWorktree }
         // Check if user is currently viewing this session
         const activeGroup = groups.find((g) => g.id === activeGroupId);
         const isViewingSession =
-          activeGroup?.activeSessionId === sessionId &&
-          pathsEqual(session.cwd, cwd) &&
-          isActive;
+          activeGroup?.activeSessionId === sessionId && pathsEqual(session.cwd, cwd) && isActive;
 
         // Update output state to idle (will become 'unread' if user is not viewing)
         setOutputState(sessionId, 'idle', isViewingSession);
@@ -1175,10 +1180,15 @@ export function AgentPanel({ repoPath, cwd, isActive = false, onSwitchWorktree }
               onSessionReorder={(from, to) => handleReorderSessions(group.id, from, to)}
               onGroupClick={() => handleGroupClick(group.id)}
             />
-            {/* Status Line at bottom of each group */}
-            <div className="mt-auto pointer-events-auto">
-              <StatusLine sessionId={group.activeSessionId} onHeightChange={setStatusLineHeight} />
-            </div>
+            {/* Status Line at bottom of each group - only render container when enabled */}
+            {statusLineEnabled && (
+              <div className="mt-auto pointer-events-auto">
+                <StatusLine
+                  sessionId={group.activeSessionId}
+                  onHeightChange={setStatusLineHeight}
+                />
+              </div>
+            )}
           </div>
         );
       })}

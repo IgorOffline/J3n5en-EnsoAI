@@ -677,10 +677,10 @@ export function AgentTerminal({
     // biome-ignore lint/a11y/useKeyWithClickEvents: click is for focus activation
     <div
       className="relative h-full w-full"
-      style={{ backgroundColor: settings.theme.background, contain: 'strict' }}
+      style={{ backgroundColor: settings.theme.background }}
       onClick={handleClick}
     >
-      <div ref={containerRef} className="h-full w-full px-[5px] py-[2px]" />
+      <div ref={containerRef} className="h-full w-full" />
       <TerminalSearchBar
         ref={searchBarRef}
         isOpen={isSearchOpen}
