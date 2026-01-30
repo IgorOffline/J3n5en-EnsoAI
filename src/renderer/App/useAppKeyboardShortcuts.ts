@@ -55,9 +55,49 @@ export function useAppKeyboardShortcuts({
   // Listen for main tab switching keyboard shortcuts (capture phase to override xterm)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (shouldSkipShortcut(e)) return;
+      // Skip IME composition and keybinding recording
+      if (e.isComposing) return;
+      const target = e.target as HTMLElement | null;
+      if (target?.hasAttribute('data-keybinding-recording')) return;
 
       const bindings = useSettingsStore.getState().mainTabKeybindings;
+
+      // Check main tab shortcuts using e.code BEFORE checking if target is input/textarea
+      // This allows tab switching to work even when xterm has focus
+      // Use e.code for keyboard layout independence (Option+1 may produce special chars)
+      const isDigit1to4 = e.code >= 'Digit1' && e.code <= 'Digit4';
+      if (isDigit1to4) {
+        const shortcuts = [
+          bindings.switchToAgent,
+          bindings.switchToFile,
+          bindings.switchToTerminal,
+          bindings.switchToSourceControl,
+        ];
+        const tabs: TabId[] = ['chat', 'file', 'terminal', 'source-control'];
+        const index = Number.parseInt(e.code.slice(5), 10) - 1;
+        const binding = shortcuts[index];
+
+        if (binding) {
+          // Check if modifier keys match
+          const ctrlMatch = binding.ctrl ? e.ctrlKey : !e.ctrlKey;
+          const altMatch = binding.alt ? e.altKey : !e.altKey;
+          const shiftMatch = binding.shift ? e.shiftKey : !e.shiftKey;
+          const metaMatch = binding.meta ? e.metaKey : !e.metaKey;
+
+          if (ctrlMatch && altMatch && shiftMatch && metaMatch) {
+            e.preventDefault();
+            onTabSwitch(tabs[index]);
+            return;
+          }
+        }
+      }
+
+      // For non-digit shortcuts, skip if target is input/textarea
+      if (target) {
+        const tagName = target.tagName.toLowerCase();
+        if (tagName === 'input' || tagName === 'textarea') return;
+        if (target.isContentEditable) return;
+      }
 
       if (matchesKeybinding(e, bindings.switchToAgent)) {
         e.preventDefault();
