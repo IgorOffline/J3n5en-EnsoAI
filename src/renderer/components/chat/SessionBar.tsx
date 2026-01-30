@@ -9,6 +9,7 @@ import {
   Plus,
   Settings,
   Sparkles,
+  Terminal,
   X,
 } from 'lucide-react';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -54,6 +55,10 @@ interface SessionBarProps {
   onNewSessionWithAgent?: (agentId: string, agentCommand: string) => void;
   onRenameSession: (id: string, name: string) => void;
   onReorderSessions?: (fromIndex: number, toIndex: number) => void;
+  // Quick Terminal props
+  quickTerminalOpen?: boolean;
+  quickTerminalHasProcess?: boolean;
+  onToggleQuickTerminal?: () => void;
 }
 
 interface BarState {
@@ -393,6 +398,9 @@ export function SessionBar({
   onNewSessionWithAgent,
   onRenameSession,
   onReorderSessions,
+  quickTerminalOpen,
+  quickTerminalHasProcess,
+  onToggleQuickTerminal,
 }: SessionBarProps) {
   const { t } = useI18n();
   const containerRef = useRef<HTMLDivElement>(null);
@@ -964,6 +972,32 @@ export function SessionBar({
                     </div>
                   )}
                 </div>
+              </>
+            )}
+
+            {/* Quick Terminal Button - 在 Provider Switcher 之后 */}
+            {!state.collapsed && onToggleQuickTerminal && (
+              <>
+                <div className="mx-1 h-4 w-px bg-border" />
+                <Tooltip>
+                  <TooltipTrigger>
+                    <button
+                      type="button"
+                      onClick={onToggleQuickTerminal}
+                      className={cn(
+                        'flex h-7 w-7 shrink-0 items-center justify-center rounded-full border transition-colors',
+                        quickTerminalOpen
+                          ? 'bg-accent text-accent-foreground border-accent/50'
+                          : quickTerminalHasProcess
+                            ? 'bg-accent/50 text-accent-foreground border-accent/30 hover:bg-accent/70'
+                            : 'text-muted-foreground border-border/50 hover:bg-accent/50 hover:text-foreground'
+                      )}
+                    >
+                      <Terminal className="h-3.5 w-3.5" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipPopup>{t('Quick Terminal')} (Ctrl+`)</TooltipPopup>
+                </Tooltip>
               </>
             )}
           </div>
